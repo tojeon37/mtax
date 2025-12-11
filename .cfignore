@@ -1,0 +1,16 @@
+node_modules
+src
+.env
+.env.local
+.env.production
+vite.config.ts
+tsconfig.json
+tsconfig.node.json
+postcss.config.js
+tailwind.config.js
+package-lock.json
+.git
+.gitignore
+README.md
+_cloudflare_config.md
+
