@@ -135,7 +135,7 @@ export const InvoiceQuick: React.FC = () => {
 
         {/* 옵션 요약 라벨 */}
         <div
-          className="mt-4 text-center text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          className="mt-4 text-center text-base font-medium text-gray-700 dark:text-gray-300 cursor-pointer p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
           onClick={() => {
             setLocalIssueDate(issueDate)
             setLocalPaymentType(paymentType)
