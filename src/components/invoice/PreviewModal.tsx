@@ -126,7 +126,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
     }
     
     // 확인 다이얼로그
-    const confirmed = window.confirm('사업자 상태 조회 시 15원이 차감됩니다. 계속하시겠습니까?')
+    const confirmed = window.confirm('상태조회시 15원이 부과됩니다')
     if (!confirmed) return
     
     setIsCheckingState(true)
@@ -188,7 +188,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
           {/* 공급자 (우리회사) */}
           {currentCompany && (
             <Card className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">공급자</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">공급자(우리회사)</h2>
               {renderField('상호', currentCompany.name)}
               {renderField('사업자번호', currentCompany.businessNumber)}
               {renderField('대표자', currentCompany.ceoName)}
@@ -199,7 +199,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
 
           {/* 공급받는자 (거래처) */}
           <Card className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">공급받는자</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">공급받는자(거래처)</h2>
             {renderField('상호', buyer?.name || '미선택')}
             {buyer?.businessNumber && (
               <div className="mb-3">
@@ -221,19 +221,19 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
                     무료건수가 소진되었습니다. 조회를 위해 결제수단을 등록해주세요.
                   </div>
                 )}
-                {isFreeMode && (
-                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    조회 시 15원이 차감됩니다
-                  </div>
-                )}
                 {corpStateResult && (
                   <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md">
                     <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
-                      상태: {corpStateResult.state_name}
+                      상태조회결과 : {corpStateResult.state_name} (조회시 15원)
                     </div>
                     <div className="text-xs text-blue-600 dark:text-blue-400">
                       {corpStateResult.state_description}
                     </div>
+                  </div>
+                )}
+                {isFreeMode && !corpStateResult && (
+                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    상태조회결과 : 정상, 휴업, 폐업 등 (조회시 15원)
                   </div>
                 )}
                 {lastCheckedAt && (

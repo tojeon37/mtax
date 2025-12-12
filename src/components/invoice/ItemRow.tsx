@@ -18,13 +18,13 @@ export const ItemRow: React.FC<ItemRowProps> = ({
   const [isExpanded, setIsExpanded] = useState(false)
 
   const handleSupplyValueChange = (value: string) => {
-    const numValue = parseFloat(value) || 0
+    const numValue = Number(value || 0)
     onUpdate({ supplyValue: numValue })
   }
 
   const handleQuantityPriceChange = (qty: string, price: string) => {
-    const quantity = parseFloat(qty) || 0
-    const unitPrice = parseFloat(price) || 0
+    const quantity = Number(qty || 0)
+    const unitPrice = Number(price || 0)
     onUpdate({
       quantity,
       unitPrice,
@@ -82,7 +82,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
               onChange={(e) =>
                 handleQuantityPriceChange(
                   e.target.value,
-                  item.unitPrice?.toString() || '0'
+                  item.unitPrice?.toString() || ''
                 )
               }
             />
@@ -92,7 +92,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
               value={item.unitPrice || ''}
               onChange={(e) =>
                 handleQuantityPriceChange(
-                  item.quantity?.toString() || '0',
+                  item.quantity?.toString() || '',
                   e.target.value
                 )
               }

@@ -199,8 +199,8 @@ const DeleteAccountPage: React.FC = () => {
                 그동안 이용해주셔서 감사합니다.
               </h2>
               <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-                탈퇴 시 계정은 삭제되며,<br/>
-                발행내역은 법령에 따라 보관됩니다.<br/>
+                탈퇴 시 회원님의 계정 정보는 모두 삭제됩니다.<br/>
+                다만, 전자세금계산서 발행내역은 관련 법령에 따라 보관됩니다.<br/>
                 탈퇴를 진행하시겠습니까?
               </p>
               <div className="flex gap-3">
@@ -230,8 +230,8 @@ const DeleteAccountPage: React.FC = () => {
                 정말 탈퇴하시겠습니까?
               </h2>
               <p className="text-red-700 dark:text-red-300 mb-4 leading-relaxed">
-                탈퇴 시 계정은 삭제되며,<br/>
-                발행내역은 법령에 따라 보관됩니다.
+                탈퇴 시 회원님의 계정 정보는 모두 삭제됩니다.<br/>
+                다만, 전자세금계산서 발행내역은 관련 법령에 따라 보관됩니다.
               </p>
               <div className="flex gap-3">
                 <button

@@ -39,32 +39,39 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     defaultValues: {
       name: item.name || '',
       specification: item.specification || '',
-      quantity: item.quantity || 1,
-      unitPrice: item.unitPrice || 0,
-      supplyValue: item.supplyValue || 0,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      supplyValue: item.supplyValue,
       note: item.note || '',
     },
   })
 
   // 콤마가 포함된 표시용 값들
   const [quantityDisplay, setQuantityDisplay] = useState(
-    item.quantity ? formatNumber(item.quantity.toString()) : '1'
+    item.quantity ? formatNumber(item.quantity.toString()) : ''
   )
   const [unitPriceDisplay, setUnitPriceDisplay] = useState(
-    item.unitPrice ? formatNumber(item.unitPrice.toString()) : '0'
+    item.unitPrice ? formatNumber(item.unitPrice.toString()) : ''
   )
   const [supplyValueDisplay, setSupplyValueDisplay] = useState(
-    item.supplyValue ? formatNumber(item.supplyValue.toString()) : '0'
+    item.supplyValue ? formatNumber(item.supplyValue.toString()) : ''
   )
+  
+  // 공급가액 하이라이트 상태
+  const [highlightAmount, setHighlightAmount] = useState(false)
 
   // 공급가액 자동 계산 함수
   const calculateSupplyValue = (qty: number, price: number) => {
-    if (qty > 0 && price > 0) {
-      const calculated = qty * price
+    const qtyNum = Number(qty || 0)
+    const priceNum = Number(price || 0)
+    if (qtyNum > 0 && priceNum > 0) {
+      const calculated = qtyNum * priceNum
       setValue('supplyValue', calculated)
       setSupplyValueDisplay(formatNumber(calculated.toString()))
       return calculated
     }
+    setValue('supplyValue', 0)
+    setSupplyValueDisplay('')
     return 0
   }
 
@@ -73,12 +80,16 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     const formatted = formatNumberInput(value)
     const displayFormatted = formatNumber(formatted)
     setQuantityDisplay(displayFormatted)
-    const numValue = parseFloat(removeCommas(formatted)) || 0
+    const numValue = Number(removeCommas(formatted) || 0)
     setValue('quantity', numValue)
     
     // 공급가액 자동 계산
-    const currentUnitPrice = parseFloat(removeCommas(unitPriceDisplay)) || 0
+    const currentUnitPrice = Number(removeCommas(unitPriceDisplay) || 0)
     const calculatedSupply = calculateSupplyValue(numValue, currentUnitPrice)
+    
+    // 공급가액 하이라이트 효과
+    setHighlightAmount(true)
+    setTimeout(() => setHighlightAmount(false), 300)
     
     // store 업데이트
     onUpdate({
@@ -93,12 +104,16 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     const formatted = formatNumberInput(value)
     const displayFormatted = formatNumber(formatted)
     setUnitPriceDisplay(displayFormatted)
-    const numValue = parseFloat(removeCommas(formatted)) || 0
+    const numValue = Number(removeCommas(formatted) || 0)
     setValue('unitPrice', numValue)
     
     // 공급가액 자동 계산
-    const currentQuantity = parseFloat(removeCommas(quantityDisplay)) || 0
+    const currentQuantity = Number(removeCommas(quantityDisplay) || 0)
     const calculatedSupply = calculateSupplyValue(currentQuantity, numValue)
+    
+    // 공급가액 하이라이트 효과
+    setHighlightAmount(true)
+    setTimeout(() => setHighlightAmount(false), 300)
     
     // store 업데이트
     onUpdate({
@@ -112,7 +127,7 @@ export const ItemInput: React.FC<ItemInputProps> = ({
   const handleSupplyValueChange = (value: string) => {
     const formatted = formatNumberInput(value)
     setSupplyValueDisplay(formatNumber(formatted))
-    const numValue = parseFloat(removeCommas(formatted)) || 0
+    const numValue = Number(removeCommas(formatted) || 0)
     setValue('supplyValue', numValue)
     onUpdate({ supplyValue: numValue })
   }
@@ -137,21 +152,21 @@ export const ItemInput: React.FC<ItemInputProps> = ({
 
   // item이 외부에서 변경될 때 display 값 업데이트 (초기 로드 시에만)
   useEffect(() => {
-    const currentQuantity = parseFloat(removeCommas(quantityDisplay)) || 0
-    const currentUnitPrice = parseFloat(removeCommas(unitPriceDisplay)) || 0
-    const currentSupplyValue = parseFloat(removeCommas(supplyValueDisplay)) || 0
+    const currentQuantity = Number(removeCommas(quantityDisplay) || 0)
+    const currentUnitPrice = Number(removeCommas(unitPriceDisplay) || 0)
+    const currentSupplyValue = Number(removeCommas(supplyValueDisplay) || 0)
     
     // 외부에서 변경된 경우에만 업데이트 (사용자 입력과 충돌 방지)
     if (item.quantity !== undefined && Math.abs(item.quantity - currentQuantity) > 0.01) {
-      setQuantityDisplay(formatNumber(item.quantity.toString()))
+      setQuantityDisplay(item.quantity > 0 ? formatNumber(item.quantity.toString()) : '')
       setValue('quantity', item.quantity)
     }
     if (item.unitPrice !== undefined && Math.abs(item.unitPrice - currentUnitPrice) > 0.01) {
-      setUnitPriceDisplay(formatNumber(item.unitPrice.toString()))
+      setUnitPriceDisplay(item.unitPrice > 0 ? formatNumber(item.unitPrice.toString()) : '')
       setValue('unitPrice', item.unitPrice)
     }
     if (item.supplyValue !== undefined && Math.abs(item.supplyValue - currentSupplyValue) > 0.01) {
-      setSupplyValueDisplay(formatNumber(item.supplyValue.toString()))
+      setSupplyValueDisplay(item.supplyValue > 0 ? formatNumber(item.supplyValue.toString()) : '')
       setValue('supplyValue', item.supplyValue)
     }
   }, [item.id]) // item.id가 변경될 때만 (다른 item으로 전환 시)
@@ -208,7 +223,7 @@ export const ItemInput: React.FC<ItemInputProps> = ({
               {...register('name', { required: '품목명을 입력해주세요' })}
               onChange={(e) => handleNameChange(e.target.value)}
               className="mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-              placeholder="품목명을 입력하세요"
+              placeholder=""
             />
             {errors.name && (
               <p className="mt-1 text-sm text-red-500 dark:text-red-400">
@@ -226,7 +241,7 @@ export const ItemInput: React.FC<ItemInputProps> = ({
               {...register('specification')}
               onChange={(e) => handleSpecificationChange(e.target.value)}
               className="mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-              placeholder="규격 (선택사항)"
+              placeholder=""
             />
           </div>
 
@@ -236,23 +251,24 @@ export const ItemInput: React.FC<ItemInputProps> = ({
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 수량 <span className="text-red-500 dark:text-red-400">*</span>
               </label>
-              <input
-                type="text"
-                value={quantityDisplay}
-                onChange={(e) => handleQuantityChange(e.target.value)}
-                onBlur={() => {
-                  const numValue = parseFloat(removeCommas(quantityDisplay)) || 0
-                  if (numValue < 0.01) {
-                    setQuantityDisplay('1')
-                    setValue('quantity', 1)
-                    onUpdate({ quantity: 1 })
-                  } else {
-                    setQuantityDisplay(formatNumber(numValue.toString()))
-                  }
-                }}
-                className="mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                placeholder="1"
-              />
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={quantityDisplay}
+                  onChange={(e) => handleQuantityChange(e.target.value)}
+                  onBlur={() => {
+                    const numValue = Number(removeCommas(quantityDisplay) || 0)
+                    if (numValue > 0) {
+                      setQuantityDisplay(formatNumber(numValue.toString()))
+                    }
+                  }}
+                  className="mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                  placeholder=""
+                />
+                {(quantityDisplay && Number(removeCommas(quantityDisplay) || 0) > 0) && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 dark:text-green-400 text-sm font-bold">✔</span>
+                )}
+              </div>
               {errors.quantity && (
                 <p className="mt-1 text-sm text-red-500 dark:text-red-400">
                   {errors.quantity.message}
@@ -264,17 +280,24 @@ export const ItemInput: React.FC<ItemInputProps> = ({
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 단가 <span className="text-red-500 dark:text-red-400">*</span>
               </label>
-              <input
-                type="text"
-                value={unitPriceDisplay}
-                onChange={(e) => handleUnitPriceChange(e.target.value)}
-                onBlur={() => {
-                  const numValue = parseFloat(removeCommas(unitPriceDisplay)) || 0
-                  setUnitPriceDisplay(formatNumber(numValue.toString()))
-                }}
-                className="mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                placeholder="0"
-              />
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={unitPriceDisplay}
+                  onChange={(e) => handleUnitPriceChange(e.target.value)}
+                  onBlur={() => {
+                    const numValue = Number(removeCommas(unitPriceDisplay) || 0)
+                    if (numValue > 0) {
+                      setUnitPriceDisplay(formatNumber(numValue.toString()))
+                    }
+                  }}
+                  className="mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                  placeholder=""
+                />
+                {(unitPriceDisplay && Number(removeCommas(unitPriceDisplay) || 0) > 0) && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 dark:text-green-400 text-sm font-bold">✔</span>
+                )}
+              </div>
               {errors.unitPrice && (
                 <p className="mt-1 text-sm text-red-500 dark:text-red-400">
                   {errors.unitPrice.message}
@@ -293,11 +316,15 @@ export const ItemInput: React.FC<ItemInputProps> = ({
               value={supplyValueDisplay}
               onChange={(e) => handleSupplyValueChange(e.target.value)}
               onBlur={() => {
-                const numValue = parseFloat(removeCommas(supplyValueDisplay)) || 0
-                setSupplyValueDisplay(formatNumber(numValue.toString()))
+                const numValue = Number(removeCommas(supplyValueDisplay) || 0)
+                if (numValue > 0) {
+                  setSupplyValueDisplay(formatNumber(numValue.toString()))
+                }
               }}
-              className="mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-              placeholder="자동 계산"
+              className={`mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300 ${
+                highlightAmount ? 'bg-blue-100/30 dark:bg-blue-900/30' : ''
+              }`}
+              placeholder="(자동계산)"
             />
             {errors.supplyValue && (
               <p className="mt-1 text-sm text-red-500 dark:text-red-400">
@@ -315,19 +342,21 @@ export const ItemInput: React.FC<ItemInputProps> = ({
               {...register('note')}
               onChange={(e) => handleNoteChange(e.target.value)}
               className="mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-              placeholder="비고 (선택사항)"
+              placeholder=""
             />
           </div>
 
           {/* 삭제 버튼 */}
           {canRemove && onRemove && (
-            <button
-              type="button"
-              onClick={onRemove}
-              className="text-red-500 dark:text-red-400 text-sm font-medium mt-3 hover:text-red-600 dark:hover:text-red-300 transition-colors"
-            >
-              품목 삭제
-            </button>
+            <div className="flex justify-center mt-3">
+              <button
+                type="button"
+                onClick={onRemove}
+                className="text-red-500 dark:text-red-400 text-sm font-medium hover:text-red-600 dark:hover:text-red-300 transition-colors"
+              >
+                품목 삭제
+              </button>
+            </div>
           )}
         </div>
       )}

@@ -109,13 +109,13 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ company, onSuccess, onCancel 
         <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
           <span className="font-semibold">계발이는 바로빌의 공식 파트너사입니다.</span>
           <br />
-          우리회사 정보를 저장하면 동일한 아이디/비밀번호로 바로빌에도 자동 로그인할 수 있습니다.
+          우리회사 정보를 저장하면 동일한 아이디로 바로빌 로그인이 가능합니다.
         </p>
       </div>
 
       {/* 사업자등록증 안내 문구 */}
       <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-700 text-sm text-gray-700 dark:text-gray-300 rounded">
-        사업자등록증과 동일한 정보를 입력하세요.
+        사업자등록증과 동일한 정보를 입력해 주세요.
       </div>
 
       {/* 1. 사업자등록번호 */}

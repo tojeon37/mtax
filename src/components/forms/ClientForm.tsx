@@ -116,7 +116,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel }) 
     <div className="space-y-4">
       {/* 사업자등록증 안내 문구 */}
       <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-700 text-sm text-gray-700 dark:text-gray-300 rounded">
-        사업자등록증과 동일한 정보를 입력하세요.
+        사업자등록증과 동일한 정보를 입력해 주세요.
       </div>
 
       {/* 1. 사업자등록번호 */}
