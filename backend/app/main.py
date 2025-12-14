@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.api.v1 import api_router
 from app.core.config import settings
-from app.db.session import test_db_connection, engine
-from app.db.session import Base, engine
+from app.db.session import test_db_connection, engine, Base
 
 
 app = FastAPI(
@@ -12,21 +12,53 @@ app = FastAPI(
     version="1.0.0",
 )
 
-
+# ======================================================
+# ⚠️ DB 초기화 엔드포인트 (초기 1회용)
+# ======================================================
 @app.post("/__init_db")
 def init_db_endpoint():
+    """
+    Cloud Run 환경에서 DB 테이블을 최초 1회 생성하기 위한 엔드포인트
+
+    ⚠️ 주의
+    - 운영 안정화 후 반드시 제거하거나 관리자 인증 뒤로 숨길 것
+    """
+
+    # 🔥 중요: 모든 모델 "모듈"을 import 해야 Base.metadata에 등록됨
+    from app.models import (
+        user,
+        user_profile,
+        invoice,
+        supplier,
+        recipient,
+        client,
+        company,
+        usage_log,
+        billing_cycle,
+        payment,
+        payment_method,
+        free_quota,
+        free_quota_history,
+        tax_invoice_issue,
+        session,
+        device_session,
+        corp_state_history,
+        billing_charge,
+    )
+
     Base.metadata.create_all(bind=engine)
     return {"status": "ok", "message": "tables created"}
 
 
-# CORS 미들웨어 설정
-# 주의: allow_credentials=True일 때는 allow_origins에 "*"를 사용할 수 없음
+# ======================================================
+# CORS 설정
+# ======================================================
 origins = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
-    # 프론트 개발용
+    # 실제 서비스 도메인 필요 시 추가
 ]
 
 app.add_middleware(
@@ -37,56 +69,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 라우터 연결
+
+# ======================================================
+# API Router
+# ======================================================
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 
+# ======================================================
+# Startup 이벤트
+# ======================================================
 @app.on_event("startup")
 async def startup_event():
-    """애플리케이션 시작 시 실행"""
-    # 데이터베이스 연결 테스트
+    """
+    애플리케이션 시작 시 실행
+
+    - DB 연결 테스트만 수행
+    - 테이블 자동 생성 ❌ (운영 환경 안전)
+    """
     test_db_connection()
 
-    # 테이블 자동 생성 (개발 환경용)
-    try:
-        from app.db.session import Base
-        from app.models import (
-            user,
-            user_profile,
-            invoice,
-            supplier,
-            recipient,
-            client,
-            company,
-            usage_log,
-            billing_cycle,
-            payment,
-            payment_method,
-            free_quota,
-            free_quota_history,
-            tax_invoice_issue,
-            session,
-            device_session,
-            corp_state_history,
-        )
 
-    except Exception:
-        pass
-
-
+# ======================================================
+# 기본 엔드포인트
+# ======================================================
 @app.get("/health")
 def health_check():
-    """헬스 체크 엔드포인트"""
     return {"status": "ok"}
 
 
 @app.get("/")
 def root():
-    """루트 엔드포인트"""
-    return {"message": "Invoice App API", "version": "1.0.0", "docs": "/docs"}
+    return {
+        "message": "Invoice App API",
+        "version": "1.0.0",
+        "docs": "/docs",
+    }
 
 
+# ======================================================
+# 로컬 실행용
+# ======================================================
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+    )
