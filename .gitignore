@@ -1,0 +1,124 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+backend/venv/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.eslintcache
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+nohup.out
+debug.log
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.cert
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Backup folders
+__backup_before_cleanup/
+backup/
+*.bak
+*.backup
+
+# Auto cleanup
+legacy/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Cloudflare
+cloudflared.exe
+
+# Config files with sensitive data
+config.yml
+
+# BaroService examples (optional - remove if not needed)
+BaroService_Python/
+
+# Frontend build
+front/dist/
+front/node_modules/
+
+# Backend
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+
+# Report files (temporary analysis reports)
+*_REPORT.md
+docs/*_REPORT.md
+REFACTORING_PLAN.md
+cleanup_project.ps1
+
+# Scripts folder (temporary build/deploy scripts)
+scripts/
+
+# Test results
+test-results/
+front/test-results/
+*.spec.ts.snap
+
+# Playwright
+playwright-report/
+playwright/.cache/

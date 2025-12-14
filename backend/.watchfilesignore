@@ -1,0 +1,24 @@
+# uvicorn reload 시 제외할 파일/폴더
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+
+

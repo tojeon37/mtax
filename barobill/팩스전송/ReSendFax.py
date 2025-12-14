@@ -1,0 +1,28 @@
+import re
+
+from zeep import Client  # https://pypi.org/project/zeep/
+
+client = Client("https://testws.baroservice.com/FAX.asmx?WSDL")  # 테스트서버
+# client = Client("https://ws.baroservice.com/FAX.asmx?WSDL")  # 운영서버
+
+# ---------------------------------------------------------------------------------------------------
+# API 레퍼런스 : https://dev.barobill.co.kr/docs/references/팩스전송-API#ReSendFax
+# ---------------------------------------------------------------------------------------------------
+certKey = ''
+corpNum = ''
+senderId = ''
+sendKey = ''
+refKey = ''
+
+result = client.service.ReSendFax(
+    CERTKEY=certKey,
+    CorpNum=corpNum,
+    SenderID=senderId,
+    SendKey=sendKey,
+    RefKey=refKey,
+)
+
+if re.compile('^-[0-9]{5}$').match(result) is not None:  # 호출 실패
+    print(result)
+else:  # 호출 성공
+    print(result)
