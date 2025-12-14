@@ -22,6 +22,7 @@ import DeleteAccountPage from '../pages/DeleteAccountPage'
 import SessionManagePage from '../pages/SessionManagePage'
 import DataExportPage from '../pages/DataExportPage'
 import GoodbyePage from '../pages/GoodbyePage'
+import { GuidePage } from '../pages/GuidePage'
 import { ProtectedRoute } from '../components/auth/ProtectedRoute'
 
 export const AppRouter = () => {
@@ -158,6 +159,7 @@ export const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+      <Route path="/guide" element={<GuidePage />} />
       <Route path="/goodbye" element={<GoodbyePage />} />
       {/* 사용요금 관리 */}
       <Route

@@ -128,7 +128,8 @@ export const QuickInvoiceForm: React.FC = () => {
       {isFreeMode && (
         <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
           <p className="text-sm text-gray-700 dark:text-gray-300">
-            남은 무료건수: 계산서 {freeInvoiceRemaining}건 / 조회 {freeStatuscheckRemaining}건
+            남은 무료건수: 계산서 {freeInvoiceRemaining}건
+            {freeInvoiceRemaining > 0 && <span className="text-gray-500 dark:text-gray-400"> (상태조회 무료 제공 기간)</span>}
           </p>
         </div>
       )}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Item } from '../../store/invoiceStore'
 import { formatNumber, formatNumberInput, removeCommas } from '../../utils/numberFormat'
+import { ItemPickerSheet, saveRecentItem } from './ItemPickerSheet'
 
 interface ItemInputProps {
   item: Item
@@ -150,6 +151,31 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     onUpdate({ note })
   }
 
+  // 품목 선택 핸들러
+  const handleItemSelect = (selectedItem: Item) => {
+    const selectedQuantity = selectedItem.quantity || item.quantity || 1
+    const selectedUnitPrice = selectedItem.unitPrice || 0
+    const calculatedSupply = selectedQuantity * selectedUnitPrice
+    
+    setValue('name', selectedItem.name)
+    setValue('specification', selectedItem.specification || '')
+    setValue('quantity', selectedQuantity)
+    setValue('unitPrice', selectedUnitPrice)
+    setValue('supplyValue', calculatedSupply)
+    
+    setQuantityDisplay(selectedQuantity > 0 ? formatNumber(selectedQuantity.toString()) : '')
+    setUnitPriceDisplay(selectedUnitPrice > 0 ? formatNumber(selectedUnitPrice.toString()) : '')
+    setSupplyValueDisplay(calculatedSupply > 0 ? formatNumber(calculatedSupply.toString()) : '')
+    
+    onUpdate({
+      name: selectedItem.name,
+      specification: selectedItem.specification ?? '',
+      unitPrice: selectedUnitPrice,
+      quantity: selectedQuantity,
+      supplyValue: calculatedSupply,
+    })
+  }
+
   // item이 외부에서 변경될 때 display 값 업데이트 (초기 로드 시에만)
   useEffect(() => {
     const currentQuantity = Number(removeCommas(quantityDisplay) || 0)
@@ -171,10 +197,41 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     }
   }, [item.id]) // item.id가 변경될 때만 (다른 item으로 전환 시)
 
+  // 품목명이 직접 입력되고 완성되었을 때 최근 사용에 추가
+  // TODO: 실제 API 연동 시 이 로직을 발행 완료 시점(handleIssue)으로 이동
+  useEffect(() => {
+    // 품목명이 있고, 공급가액이 0보다 큰 경우
+    if (
+      item.name &&
+      item.name.trim() !== '' &&
+      item.supplyValue > 0
+    ) {
+      const itemToSave: Item = {
+        id: item.id,
+        name: item.name,
+        specification: item.specification,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        supplyValue: item.supplyValue,
+        note: item.note,
+      }
+      
+      // 디바운스: 3초 후에 저장 (사용자가 계속 입력 중이면 저장하지 않음)
+      const timer = setTimeout(() => {
+        saveRecentItem(itemToSave)
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [item.name, item.supplyValue, item.id])
+
   // 아코디언 상태 관리 (외부 제어 또는 내부 상태)
   // 기본값: false - 모든 품목이 접힌 상태로 시작 (사용자가 클릭해야 펼쳐짐)
   const [internalOpen, setInternalOpen] = useState(false)
   const isOpen = controlledExpanded !== undefined ? controlledExpanded : internalOpen
+  
+  // 품목 선택 모달 상태
+  const [itemPickerOpen, setItemPickerOpen] = useState(false)
 
   const handleToggle = () => {
     if (onToggle) {
@@ -219,12 +276,34 @@ export const ItemInput: React.FC<ItemInputProps> = ({
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               품목명 <span className="text-red-500 dark:text-red-400">*</span>
             </label>
-            <input
-              {...register('name', { required: '품목명을 입력해주세요' })}
-              onChange={(e) => handleNameChange(e.target.value)}
-              className="mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-              placeholder=""
-            />
+            <div className="relative mt-1">
+              <input
+                {...register('name', { required: '품목명을 입력해주세요' })}
+                onChange={(e) => handleNameChange(e.target.value)}
+                className="w-full h-12 px-4 pr-14 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                placeholder="품목명을 입력하거나 선택하세요"
+              />
+              <button
+                type="button"
+                onClick={() => setItemPickerOpen(true)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200 transition-colors z-10"
+                aria-label="자주 사용하는 품목 선택"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                  />
+                </svg>
+              </button>
+            </div>
             {errors.name && (
               <p className="mt-1 text-sm text-red-500 dark:text-red-400">
                 {errors.name.message}
@@ -360,6 +439,15 @@ export const ItemInput: React.FC<ItemInputProps> = ({
           )}
         </div>
       )}
+
+      {/* ItemPickerSheet */}
+      <ItemPickerSheet
+        open={itemPickerOpen}
+        onClose={() => setItemPickerOpen(false)}
+        favorites={[]}
+        recents={[]}
+        onSelect={handleItemSelect}
+      />
     </div>
   )
 }

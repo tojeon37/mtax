@@ -119,6 +119,12 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose }) => {
             >
               설정
             </button>
+            <button
+              onClick={() => handleNavigate('/guide')}
+              className="w-full text-left px-4 py-3 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              이용안내
+            </button>
             {isAuthenticated && (
               <button
                 onClick={() => {

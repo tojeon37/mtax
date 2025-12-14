@@ -45,9 +45,10 @@ const BillingDashboard: React.FC = () => {
     
     // 이전 상태와 비교하여 변경 감지
     if (previousQuota) {
-      // 이전에 무료가 있었고 지금 모두 소진되었는지 확인
-      const wasMoreThanZero = previousQuota.free_invoice_left > 0 || previousQuota.free_status_left > 0
-      const isNowZero = quota.free_invoice_left === 0 && quota.free_status_left === 0
+      // 전자세금계산서 무료 제공분 소진 시 팝업 표시
+      // 사업자상태조회는 전자세금계산서 무료 제공 기간 동안만 무료로 제공되므로 별도 기준 불필요
+      const wasMoreThanZero = previousQuota.free_invoice_left > 0
+      const isNowZero = quota.free_invoice_left === 0
       
       if (wasMoreThanZero && isNowZero && quota.show_free_popup) {
         setShowFreeModal(true)
@@ -73,8 +74,9 @@ const BillingDashboard: React.FC = () => {
 
   // 무료 제공 정보 표시 여부 결정 (소진 후 1주일 경과 시 숨김)
   const shouldShowFreeQuota = (quota: { free_invoice_left: number; free_status_left: number; consumed_at?: string | null }) => {
-    // 무료가 남아있으면 항상 표시
-    if (quota.free_invoice_left > 0 || quota.free_status_left > 0) {
+    // 전자세금계산서 무료 제공분이 남아있으면 항상 표시
+    // 사업자상태조회는 전자세금계산서 무료 제공 기간 동안만 무료로 제공되므로 별도 기준 불필요
+    if (quota.free_invoice_left > 0) {
       return true
     }
     
@@ -131,7 +133,8 @@ const BillingDashboard: React.FC = () => {
         {!quotaLoading && quota && shouldShowFreeQuota(quota) && (
           <div className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg mb-4">
             <p className="text-sm text-green-800 dark:text-green-200 leading-relaxed">
-              무료 제공: 계산서 <b>{quota.free_invoice_left}건</b> / 상태조회 <b>{quota.free_status_left}건</b> 남음
+              무료 제공: 계산서 <b>{quota.free_invoice_left}건</b> 남음
+              {quota.free_invoice_left > 0 && <span className="text-green-600 dark:text-green-300"> (상태조회 무료 제공 기간)</span>}
             </p>
           </div>
         )}
