@@ -1,0 +1,90 @@
+import { useEffect } from 'react'
+import { BrowserRouter } from 'react-router-dom'
+import { AuthProvider } from './hooks/useAuth'
+import { ThemeProvider } from './hooks/useTheme'
+import { TopBar } from './components/layout/TopBar'
+import { AppRouter } from './router'
+import { refreshAccessToken } from './api/tokenRefresh'
+import { useCompanyStore } from './store/useCompanyStore'
+import axios from 'axios'
+
+function App() {
+  const { loadCurrentCompany } = useCompanyStore()
+  
+  // 앱 시작 시 회사 정보 로드
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      // 로그인된 상태면 회사 정보 로드
+      loadCurrentCompany()
+    }
+  }, [loadCurrentCompany])
+
+  // 앱 시작 시 refresh token으로 자동 로그인 시도
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const refreshToken = localStorage.getItem('refresh_token')
+      
+      if (refreshToken) {
+        try {
+          // refresh token으로 새 access token 발급 시도
+          const newToken = await refreshAccessToken()
+          
+          if (newToken) {
+            // axios 기본 헤더 설정
+            axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+          }
+        } catch (error) {
+          // 자동 로그인 실패 시 무시
+        }
+      }
+    }
+
+    initializeAuth()
+  }, [])
+
+  // 30분마다 자동으로 access token 갱신
+  useEffect(() => {
+    // 초기 로드 시 refresh token이 있는지 확인
+    const refreshToken = localStorage.getItem('refresh_token')
+    if (!refreshToken) {
+      return // refresh token이 없으면 interval 설정하지 않음
+    }
+
+    // 30분(1800000ms)마다 실행
+    const intervalId = setInterval(async () => {
+      const token = await refreshAccessToken()
+      if (!token) {
+        // refreshAccessToken 내부에서 이미 토큰 제거 및 리다이렉트 처리
+        clearInterval(intervalId)
+      }
+    }, 30 * 60 * 1000) // 30분
+
+    // 컴포넌트 언마운트 시 interval 정리
+    return () => {
+      clearInterval(intervalId)
+    }
+  }, [])
+
+  return (
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <ThemeProvider>
+        <AuthProvider>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <TopBar />
+            <main className="max-w-[480px] mx-auto bg-gray-50 dark:bg-gray-900">
+              <AppRouter />
+            </main>
+          </div>
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
+  )
+}
+
+export default App
