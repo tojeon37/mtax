@@ -16,16 +16,16 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         """
-        TCP 연결 방식 (Public IP)
+        DB_HOST가 있으면 TCP 연결, 없으면 Unix Socket 연결
         """
         if self.DB_HOST:
-            # TCP 연결 사용
+            # TCP 연결 (Public IP 사용)
             return (
                 f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}"
                 f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
             )
         else:
-            # Unix Socket 연결 사용
+            # Unix Socket 연결
             return (
                 f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}"
                 f"@/{self.DB_NAME}"
