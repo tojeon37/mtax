@@ -1,25 +1,47 @@
 from sqlalchemy import create_engine, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
-# 데이터베이스 엔진 생성
+# =========================
+# Database Engine
+# =========================
 engine = create_engine(
     settings.database_url,
-    pool_pre_ping=True,  # 연결 유효성 검사
-    pool_recycle=3600,   # 1시간마다 연결 재생성
-    echo=False  # SQL 쿼리 로깅 (개발 시 True로 변경 가능)
+
+    # ✅ Cloud Run / Cloud SQL 안정 옵션
+    pool_pre_ping=True,     # 죽은 커넥션 자동 감지
+    pool_recycle=1800,      # 30분마다 커넥션 재생성 (Cloud SQL idle timeout 대응)
+
+    # ✅ Serverless 환경 권장 설정
+    pool_size=5,            # 기본값보다 명시적으로 작게
+    max_overflow=2,         # 순간 트래픽 여유
+    pool_timeout=30,        # 커넥션 대기 최대 시간
+
+    # 디버그용
+    echo=False,
+    future=True,            # SQLAlchemy 2.0 스타일
 )
 
-# 세션 팩토리 생성
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# =========================
+# Session Factory
+# =========================
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
 
-# Base 클래스 (모델들이 상속받을 클래스)
+# =========================
+# Base for Models
+# =========================
 Base = declarative_base()
 
 
+# =========================
+# Dependency
+# =========================
 def get_db():
-    """데이터베이스 세션 의존성"""
+    """FastAPI DB dependency"""
     db = SessionLocal()
     try:
         yield db
@@ -27,12 +49,15 @@ def get_db():
         db.close()
 
 
-def test_db_connection():
-    """데이터베이스 연결 테스트"""
+# =========================
+# Connection Test (optional)
+# =========================
+def test_db_connection() -> bool:
+    """Database connection test"""
     try:
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
         return True
-    except Exception:
+    except Exception as e:
+        print("DB connection test failed:", e)
         return False
-

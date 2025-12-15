@@ -12,6 +12,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
 # ======================================================
 # ⚠️ DB 초기화 엔드포인트 (초기 1회용)
 # ======================================================
@@ -23,31 +24,43 @@ def init_db_endpoint():
     ⚠️ 주의
     - 운영 안정화 후 반드시 제거하거나 관리자 인증 뒤로 숨길 것
     """
+    try:
+        # 🔥 중요: 모든 모델 모듈을 import 해야 Base.metadata에 등록됨
+        from app.models import (
+            user,
+            user_profile,
+            invoice,
+            supplier,
+            recipient,
+            client,
+            company,
+            usage_log,
+            billing_cycle,
+            payment,
+            payment_method,
+            free_quota,
+            free_quota_history,
+            tax_invoice_issue,
+            session,
+            device_session,
+            corp_state_history,
+            billing_charge,
+        )
 
-    # 🔥 중요: 모든 모델 "모듈"을 import 해야 Base.metadata에 등록됨
-    from app.models import (
-        user,
-        user_profile,
-        invoice,
-        supplier,
-        recipient,
-        client,
-        company,
-        usage_log,
-        billing_cycle,
-        payment,
-        payment_method,
-        free_quota,
-        free_quota_history,
-        tax_invoice_issue,
-        session,
-        device_session,
-        corp_state_history,
-        billing_charge,
-    )
+        Base.metadata.create_all(bind=engine)
 
-    Base.metadata.create_all(bind=engine)
-    return {"status": "ok", "message": "tables created"}
+        return {
+            "status": "ok",
+            "message": "tables created successfully",
+        }
+
+    except Exception as e:
+        # Cloud Run 로그에 에러 남기기
+        print("❌ DB init failed:", e)
+        return {
+            "status": "error",
+            "message": str(e),
+        }
 
 
 # ======================================================
@@ -58,7 +71,6 @@ origins = [
     "http://localhost:5173",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
-    # 실제 서비스 도메인 필요 시 추가
 ]
 
 app.add_middleware(
@@ -87,7 +99,13 @@ async def startup_event():
     - DB 연결 테스트만 수행
     - 테이블 자동 생성 ❌ (운영 환경 안전)
     """
-    test_db_connection()
+    print("🚀 Application startup: testing DB connection...")
+    ok = test_db_connection()
+
+    if ok:
+        print("✅ DB connection successful")
+    else:
+        print("❌ DB connection failed")
 
 
 # ======================================================
