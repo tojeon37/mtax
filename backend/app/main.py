@@ -55,7 +55,6 @@ def init_db_endpoint():
         }
 
     except Exception as e:
-        # Cloud Run 로그에 에러 남기기
         print("❌ DB init failed:", e)
         return {
             "status": "error",
@@ -64,9 +63,10 @@ def init_db_endpoint():
 
 
 # ======================================================
-# CORS 설정
+# ✅ CORS 설정 (여기 핵심)
 # ======================================================
 origins = [
+    "https://tax.banhaus.kr",  # ✅ 운영 프론트
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:3000",
@@ -93,12 +93,6 @@ app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 # ======================================================
 @app.on_event("startup")
 async def startup_event():
-    """
-    애플리케이션 시작 시 실행
-
-    - DB 연결 테스트만 수행
-    - 테이블 자동 생성 ❌ (운영 환경 안전)
-    """
     print("🚀 Application startup: testing DB connection...")
     ok = test_db_connection()
 
