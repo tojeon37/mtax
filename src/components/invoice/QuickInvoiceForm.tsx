@@ -27,7 +27,6 @@ export const QuickInvoiceForm: React.FC = () => {
     handleIssue,
     isIssuing,
     freeInvoiceRemaining,
-    freeStatuscheckRemaining,
     hasPaymentMethod,
     isFreeMode,
     loadUserInfo,

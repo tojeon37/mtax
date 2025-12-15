@@ -18,7 +18,6 @@ export interface LoginResponse {
     email?: string
     biz_name: string
     free_invoice_remaining?: number
-    free_statuscheck_remaining?: number
     has_payment_method?: boolean
   }
 }
@@ -29,7 +28,6 @@ export interface UserInfo {
   email?: string
   biz_name: string
   free_invoice_remaining: number
-  free_statuscheck_remaining: number
   has_payment_method: boolean
   is_free_mode: boolean
 }

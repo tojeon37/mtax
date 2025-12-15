@@ -51,7 +51,6 @@ class UserResponse(BaseModel):
     barobill_linked: Optional[bool] = False
     barobill_linked_at: Optional[datetime] = None
     free_invoice_remaining: int = 5
-    free_statuscheck_remaining: int = 5
     has_payment_method: bool = False
     created_at: datetime
     updated_at: Optional[datetime] = None

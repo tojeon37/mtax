@@ -214,8 +214,8 @@ export const QuickInvoiceForm: React.FC = () => {
             <button
               onClick={() => setPaymentType('receipt')}
               className={`flex-1 h-12 rounded-lg border-2 transition-colors ${paymentType === 'receipt'
-                  ? 'border-blue-600 bg-blue-50 text-blue-600 font-semibold'
-                  : 'border-gray-300 bg-white text-gray-700'
+                ? 'border-blue-600 bg-blue-50 text-blue-600 font-semibold'
+                : 'border-gray-300 bg-white text-gray-700'
                 }`}
             >
               영수
@@ -223,8 +223,8 @@ export const QuickInvoiceForm: React.FC = () => {
             <button
               onClick={() => setPaymentType('invoice')}
               className={`flex-1 h-12 rounded-lg border-2 transition-colors ${paymentType === 'invoice'
-                  ? 'border-blue-600 bg-blue-50 text-blue-600 font-semibold'
-                  : 'border-gray-300 bg-white text-gray-700'
+                ? 'border-blue-600 bg-blue-50 text-blue-600 font-semibold'
+                : 'border-gray-300 bg-white text-gray-700'
                 }`}
             >
               청구

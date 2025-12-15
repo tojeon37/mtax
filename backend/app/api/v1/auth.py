@@ -705,7 +705,6 @@ def get_current_user_info(
     
     free_quota = get_or_create_free_quota(db, current_user.id)
     free_invoice_remaining = free_quota.free_invoice_left if free_quota else 0
-    free_statuscheck_remaining = free_quota.free_status_left if free_quota else 0
     
     # payment_methods에서 결제수단 등록 여부 확인
     has_payment_method = db.query(PaymentMethod).filter(
@@ -724,7 +723,6 @@ def get_current_user_info(
         barobill_linked=current_user.barobill_linked,
         barobill_linked_at=current_user.barobill_linked_at,
         free_invoice_remaining=free_invoice_remaining,
-        free_statuscheck_remaining=free_statuscheck_remaining,
         has_payment_method=has_payment_method,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,

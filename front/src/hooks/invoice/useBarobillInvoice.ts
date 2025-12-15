@@ -22,10 +22,9 @@ export const useBarobillInvoice = () => {
     resetInvoice,
   } = useInvoiceStore()
   const { currentCompany } = useCompanyStore()
-  
+
   const [isIssuing, setIsIssuing] = useState(false)
   const [freeInvoiceRemaining, setFreeInvoiceRemaining] = useState(5)
-  const [freeStatuscheckRemaining, setFreeStatuscheckRemaining] = useState(5)
   const [hasPaymentMethod, setHasPaymentMethod] = useState(false)
   const [isFreeMode, setIsFreeMode] = useState(true)
 
@@ -34,7 +33,6 @@ export const useBarobillInvoice = () => {
     try {
       const userInfo = await getUserInfo()
       setFreeInvoiceRemaining(userInfo.free_invoice_remaining || 5)
-      setFreeStatuscheckRemaining(userInfo.free_statuscheck_remaining || 5)
       setHasPaymentMethod(userInfo.has_payment_method || false)
       setIsFreeMode(userInfo.is_free_mode !== undefined ? userInfo.is_free_mode : true)
     } catch (error) {
@@ -132,11 +130,11 @@ export const useBarobillInvoice = () => {
     try {
       const barobillData = prepareBarobillData()
       const response = await issueBarobillInvoice(barobillData)
-      
+
       if (response.success) {
         resetInvoice()
         await loadUserInfo()
-        
+
         const updatedUserInfo = await getUserInfo()
         if (!updatedUserInfo.is_free_mode && !updatedUserInfo.has_payment_method) {
           return {
@@ -145,7 +143,7 @@ export const useBarobillInvoice = () => {
             showPaymentAlert: true,
           }
         }
-        
+
         return {
           success: true,
           message: '세금계산서가 발행되었습니다!',
@@ -155,7 +153,7 @@ export const useBarobillInvoice = () => {
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || '세금계산서 발행 중 오류가 발생했습니다.'
-      
+
       // 인증서 관련 에러인 경우 특별 처리
       if (
         errorMessage.includes('바로빌 연동') ||
@@ -170,7 +168,7 @@ export const useBarobillInvoice = () => {
           shouldNavigateToCert: true,
         }
       }
-      
+
       return {
         success: false,
         error: errorMessage,
@@ -184,7 +182,6 @@ export const useBarobillInvoice = () => {
     handleIssue,
     isIssuing,
     freeInvoiceRemaining,
-    freeStatuscheckRemaining,
     hasPaymentMethod,
     isFreeMode,
     loadUserInfo,
