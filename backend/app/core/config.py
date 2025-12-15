@@ -5,8 +5,6 @@ class Settings(BaseSettings):
     DB_USER: str
     DB_PASSWORD: str
     DB_NAME: str
-
-    # Cloud Run에서만 사용
     INSTANCE_CONNECTION_NAME: str | None = None
 
     ENV: str = "prod"
@@ -16,18 +14,18 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         """
         Database URL
-        - Cloud Run: Cloud SQL Unix Socket
-        - Local: TCP (localhost)
+        - Cloud Run: Cloud SQL Unix Socket (PyMySQL requires host)
+        - Local: TCP localhost
         """
-        # ✅ Cloud Run 환경 (INSTANCE_CONNECTION_NAME 존재)
+        # Cloud Run
         if self.INSTANCE_CONNECTION_NAME:
             return (
-                f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@/"
-                f"{self.DB_NAME}"
+                f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}"
+                f"@localhost/{self.DB_NAME}"
                 f"?unix_socket=/cloudsql/{self.INSTANCE_CONNECTION_NAME}"
             )
 
-        # ✅ 로컬 개발 환경
+        # Local
         return (
             f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}"
             f"@localhost:3306/{self.DB_NAME}"
