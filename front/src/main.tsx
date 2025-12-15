@@ -1,16 +1,17 @@
-console.log(import.meta.env.VITE_API_URL)
 
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
+console.log(import.meta.env.VITE_API_URL)
+
 // 초기 다크모드 설정 (깜빡임 방지)
 const initTheme = () => {
   const savedTheme = localStorage.getItem('theme')
   const root = document.documentElement
   const body = document.body
-  
+
   if (savedTheme === 'dark') {
     root.classList.add('dark')
     body.classList.add('dark')
