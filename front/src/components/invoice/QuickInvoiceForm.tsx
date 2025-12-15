@@ -27,7 +27,6 @@ export const QuickInvoiceForm: React.FC = () => {
     handleIssue,
     isIssuing,
     freeInvoiceRemaining,
-    freeStatuscheckRemaining,
     hasPaymentMethod,
     isFreeMode,
     loadUserInfo,
@@ -102,7 +101,7 @@ export const QuickInvoiceForm: React.FC = () => {
       setShowPreview(false)
       await loadRecentClients()
       await loadUserInfo()
-      
+
       if (result.showPaymentAlert) {
         alert('무료 제공 5건이 모두 소진되었습니다.\n계속 이용하시려면 결제수단을 등록해주세요.')
       }
@@ -133,7 +132,7 @@ export const QuickInvoiceForm: React.FC = () => {
           </p>
         </div>
       )}
-      
+
       <div className="space-y-4 py-4">
         {/* 거래처 선택 */}
         <div className="relative">
@@ -148,7 +147,7 @@ export const QuickInvoiceForm: React.FC = () => {
               }
             }}
           />
-          
+
           {/* 최근 거래처 추천 */}
           {!buyer && buyerSearch.length === 0 && recentClients.length > 0 && (
             <div className="mt-2 space-y-1">
@@ -214,21 +213,19 @@ export const QuickInvoiceForm: React.FC = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setPaymentType('receipt')}
-              className={`flex-1 h-12 rounded-lg border-2 transition-colors ${
-                paymentType === 'receipt'
+              className={`flex-1 h-12 rounded-lg border-2 transition-colors ${paymentType === 'receipt'
                   ? 'border-blue-600 bg-blue-50 text-blue-600 font-semibold'
                   : 'border-gray-300 bg-white text-gray-700'
-              }`}
+                }`}
             >
               영수
             </button>
             <button
               onClick={() => setPaymentType('invoice')}
-              className={`flex-1 h-12 rounded-lg border-2 transition-colors ${
-                paymentType === 'invoice'
+              className={`flex-1 h-12 rounded-lg border-2 transition-colors ${paymentType === 'invoice'
                   ? 'border-blue-600 bg-blue-50 text-blue-600 font-semibold'
                   : 'border-gray-300 bg-white text-gray-700'
-              }`}
+                }`}
             >
               청구
             </button>
