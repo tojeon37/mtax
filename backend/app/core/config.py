@@ -1,42 +1,37 @@
 from pydantic_settings import BaseSettings
+from pathlib import Path
 from typing import Optional
 
 
 class Settings(BaseSettings):
-    DB_USER: str
-    DB_PASSWORD: str
-    DB_NAME: str
-    DB_HOST: Optional[str] = None
-    DB_PORT: Optional[int] = 3306
-    INSTANCE_CONNECTION_NAME: Optional[str] = None
-    ENV: str = "prod"
+    # =========================
+    # Database (Cloud Run 기준)
+    # =========================
+    DATABASE_URL: str  # Cloud Run 환경변수에서 반드시 주입
 
+    # =========================
+    # App Environment
+    # =========================
+    ENV: str = "production"
     API_V1_PREFIX: str = "/api/v1"
 
     @property
     def database_url(self) -> str:
         """
-        DB_HOST가 있으면 TCP 연결, 없으면 Unix Socket 연결
+        Cloud Run에서는 DATABASE_URL 하나만 사용
+        예:
+        mysql+pymysql://user:password@IP:3306/dbname
         """
-        if self.DB_HOST:
-            # TCP 연결 (Public IP 사용)
-            return (
-                f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}"
-                f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-            )
-        else:
-            # Unix Socket 연결
-            return (
-                f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}"
-                f"@/{self.DB_NAME}"
-                f"?unix_socket=/cloudsql/{self.INSTANCE_CONNECTION_NAME}"
-            )
+        return self.DATABASE_URL
 
     model_config = {
+        # 로컬 개발용 (.env)
+        # Cloud Run에서는 무시됨
+        "env_file": Path(__file__).resolve().parents[2] / ".env",
+        "env_file_encoding": "utf-8",
         "env_ignore_empty": True,
         "extra": "ignore",
     }
 
 
 settings = Settings()
-print("DATABASE_URL =", settings.database_url)
