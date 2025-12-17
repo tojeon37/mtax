@@ -15,6 +15,22 @@ class Settings(BaseSettings):
     ENV: str = "production"
     API_V1_PREFIX: str = "/api/v1"
 
+    # =========================
+    # JWT & Security
+    # =========================
+    SECRET_KEY: str = "your-secret-key-change-in-production"  # Cloud Run 환경변수에서 주입 권장
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
+
+    # =========================
+    # 바로빌 설정 (Optional - 회원가입 시 불필요)
+    # 사용자가 회사 정보 입력 시 자신의 인증키를 입력하는 구조
+    # =========================
+    BAROBILL_CERT_KEY: Optional[str] = None  # 파트너 서비스용 (회원가입 시 불필요)
+    BAROBILL_CORP_NUM: Optional[str] = None  # 파트너 서비스용 (회원가입 시 불필요)
+    BAROBILL_USE_TEST_SERVER: bool = False  # 테스트 서버 사용 여부
+
     @property
     def database_url(self) -> str:
         """
