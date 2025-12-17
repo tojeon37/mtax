@@ -2,7 +2,8 @@ import axios from "axios";
 import { getToken } from "./authApi";
 import { refreshAccessToken } from "./tokenRefresh";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = `${API_URL}/api/v1`;
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -70,7 +71,7 @@ axiosInstance.interceptors.response.use(
 
       try {
         const newToken = await refreshAccessToken();
-        
+
         if (newToken) {
           // 새 토큰으로 원래 요청 재시도
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
@@ -81,7 +82,7 @@ axiosInstance.interceptors.response.use(
           // Refresh 실패 시 대기열의 모든 요청 거부
           processQueue(new Error("Refresh token 갱신 실패"), null);
           isRefreshing = false;
-          
+
           // 로그인 페이지로 리다이렉트
           const isLoginPage = window.location.pathname === "/login";
           const isRegisterPage = window.location.pathname === "/register";
@@ -93,7 +94,7 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         isRefreshing = false;
-        
+
         // 로그인 페이지로 리다이렉트
         const isLoginPage = window.location.pathname === "/login";
         const isRegisterPage = window.location.pathname === "/register";

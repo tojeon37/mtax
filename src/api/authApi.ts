@@ -1,7 +1,8 @@
 import axios from 'axios'
 import axiosInstance from './axiosInstance'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = `${API_URL}/api/v1`;
 
 export interface LoginRequest {
   username: string // 바로빌 아이디
@@ -123,7 +124,7 @@ export const register = async (
     barobill_id: payload.username,
     password: payload.password,
   }
-  
+
   // 사업자 정보가 있는 경우에만 추가
   if (payload.email) requestBody.email = payload.email
   if (payload.business_no) requestBody.business_no = payload.business_no

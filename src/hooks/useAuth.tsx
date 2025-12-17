@@ -13,7 +13,8 @@ import {
 import { useCompanyStore } from '../store/useCompanyStore'
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = `${API_URL}/api/v1`;
 
 interface User {
   id: number
@@ -44,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeUser = async () => {
       const token = getToken()
       const refreshToken = localStorage.getItem('refresh_token')
-      
+
       // refresh token이 있지만 access token이 없거나 만료된 경우 자동 갱신 시도
       if (refreshToken && !token) {
         try {
@@ -61,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
       }
-      
+
       if (token) {
         await fetchUserInfo(token)
       } else {
@@ -72,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const fetchUserInfo = async (token: string) => {
       // axios 기본 헤더에 토큰 설정
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      
+
       try {
         // 토큰이 있으면 사용자 정보 조회
         const response = await axios.get(`${API_BASE_URL}/auth/me`, {
@@ -105,22 +106,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (payload: LoginRequest) => {
     const response = await loginApi(payload)
-    
+
     // Access token과 refresh token 모두 저장
     saveToken(response.access_token)
     if (response.refresh_token) {
       saveRefreshToken(response.refresh_token)
     }
-    
+
     // 바로빌 연동을 위해 비밀번호를 세션 스토리지에 임시 저장 (로그아웃 시 삭제)
     // 보안상 세션 스토리지 사용 (브라우저 종료 시 자동 삭제)
     if (payload.password) {
       sessionStorage.setItem('barobill_password', payload.password)
     }
-    
+
     // axios 기본 헤더에 토큰 설정
     axios.defaults.headers.common['Authorization'] = `Bearer ${response.access_token}`
-    
+
     if (response.user) {
       setUser(response.user)
     } else {
@@ -132,10 +133,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       setUser(userResponse.data)
     }
-    
+
     // 로그인 후 회사 정보 로드
     loadCurrentCompany()
-    
+
     // navigate는 Login 컴포넌트에서 처리하도록 함
   }
 
@@ -144,22 +145,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('registerApi 호출 시작:', payload.username)
       const response = await registerApi(payload)
       console.log('registerApi 성공:', response)
-      
+
       // Access token과 refresh token 모두 저장
       saveToken(response.access_token)
       if (response.refresh_token) {
         saveRefreshToken(response.refresh_token)
       }
-      
+
       // 바로빌 연동을 위해 비밀번호를 세션 스토리지에 임시 저장 (로그아웃 시 삭제)
       // 보안상 세션 스토리지 사용 (브라우저 종료 시 자동 삭제)
       if (payload.password) {
         sessionStorage.setItem('barobill_password', payload.password)
       }
-      
+
       // axios 기본 헤더에 토큰 설정
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.access_token}`
-      
+
       if (response.user) {
         setUser(response.user)
         console.log('사용자 정보 설정 완료:', response.user)
@@ -174,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userResponse.data)
         console.log('사용자 정보 조회 완료:', userResponse.data)
       }
-    
+
       // 회원가입 후 회사 정보 로드
       loadCurrentCompany()
       console.log('회원가입 완료')

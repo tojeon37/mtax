@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE_URL = (import.meta.env as { VITE_API_BASE_URL?: string }).VITE_API_BASE_URL || '/api/v1'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = `${API_URL}/api/v1`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -31,17 +32,17 @@ api.interceptors.response.use(
       console.error('[API 네트워크 오류]', error.message)
       return Promise.reject(new Error('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.'))
     }
-    
+
     if (error.response?.status === 401) {
       const isLoginPage = window.location.pathname === '/login' || window.location.pathname.includes('/login')
       const isRegisterAPI = error.config?.url?.includes('/auth/register')
       const isLoginAPI = error.config?.url?.includes('/auth/login')
       const isCallbackPage = window.location.pathname === '/auth/callback'
-      
+
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('remember_me')
-      
+
       if (!isRegisterAPI && !isLoginAPI && !isLoginPage && !isCallbackPage && !window.location.pathname.includes('/invoice/create')) {
         window.location.href = '/login'
       }
@@ -54,7 +55,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data: { barobill_id: string; password: string; email: string; biz_name?: string }) =>
     api.post('/auth/register', data),
-  
+
   login: (data: { username: string; password: string }) => {
     const params = new URLSearchParams()
     params.append('username', data.username)
@@ -65,7 +66,7 @@ export const authAPI = {
       },
     })
   },
-  
+
   getMe: (accessToken?: string) => {
     const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
     return api.get('/auth/me', { headers })
