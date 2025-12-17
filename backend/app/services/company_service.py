@@ -17,12 +17,17 @@ class CompanyService:
         Returns:
             BaroBillMemberService 인스턴스 또는 None
         """
-        if not settings.BAROBILL_CERT_KEY or not settings.BAROBILL_CORP_NUM:
+        # 안전하게 속성 접근 (속성이 없으면 None 반환)
+        cert_key = getattr(settings, 'BAROBILL_CERT_KEY', None)
+        corp_num = getattr(settings, 'BAROBILL_CORP_NUM', None)
+        use_test_server = getattr(settings, 'BAROBILL_USE_TEST_SERVER', False)
+        
+        if not cert_key or not corp_num:
             return None
         return BaroBillMemberService(
-            cert_key=settings.BAROBILL_CERT_KEY,
-            corp_num=settings.BAROBILL_CORP_NUM,
-            use_test_server=settings.BAROBILL_USE_TEST_SERVER
+            cert_key=cert_key,
+            corp_num=corp_num,
+            use_test_server=use_test_server
         )
 
     @staticmethod

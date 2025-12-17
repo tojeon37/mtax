@@ -1,10 +1,13 @@
 from datetime import timedelta, datetime
 from typing import Tuple
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from starlette.requests import Request
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+
 from app.db.session import get_db
 from app.schemas.user import (
     UserCreate,
@@ -14,19 +17,14 @@ from app.schemas.user import (
     PasswordReset,
     PasswordResetByToken,
     PasswordChange,
-    RefreshTokenRequest,
-    RefreshTokenResponse,
 )
 from app.models.user import User
 from app.core.security import (
     get_password_hash,
     verify_password,
-    create_access_token,
     decode_access_token,
     create_password_reset_token,
     decode_password_reset_token,
-    create_refresh_token,
-    verify_refresh_token,
 )
 from app.core.config import settings
 from app.services.auth_service import AuthService
@@ -35,38 +33,52 @@ from app.services.company_service import CompanyService
 router = APIRouter()
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
 def update_barobill_password(user: User, new_password: str) -> Tuple[bool, str]:
     """
     바로빌 비밀번호 업데이트 헬퍼 함수
-    
+
     Args:
         user: 사용자 객체
         new_password: 새 비밀번호
-        
+
     Returns:
         (성공 여부, 에러 메시지)
     """
-    if not user.barobill_linked or not user.barobill_cert_key or not user.barobill_corp_num:
+    if (
+        not user.barobill_linked
+        or not user.barobill_cert_key
+        or not user.barobill_corp_num
+    ):
         return False, None
-    
+
     try:
         from app.core.barobill.barobill_member import BaroBillMemberService
+
+        # 안전하게 속성 접근 (속성이 없으면 기본값 사용)
+        use_test_server = getattr(settings, 'BAROBILL_USE_TEST_SERVER', False)
+        
         barobill_service = BaroBillMemberService(
             cert_key=user.barobill_cert_key,
             corp_num=user.barobill_corp_num.replace("-", ""),
-            use_test_server=settings.BAROBILL_USE_TEST_SERVER
+            use_test_server=use_test_server,
         )
-        
+
         barobill_result = barobill_service.update_user_password(
-            user_id=user.barobill_id,
-            new_password=new_password
+            user_id=user.barobill_id, new_password=new_password
         )
         return True, None
     except Exception as e:
         import logging
+
         logger = logging.getLogger(__name__)
         logger.warning(f"바로빌 비밀번호 변경 실패: {str(e)}")
         return False, str(e)
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
 
@@ -115,9 +127,7 @@ def get_current_user(
     return user
 
 
-@router.post(
-    "/register", response_model=Token, status_code=status.HTTP_201_CREATED
-)
+@router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     """
     사용자 회원가입 (바로빌 연동)
@@ -179,9 +189,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             "company_name": user.company_name,
             "biz_name": user.biz_name,
         }
-        db_user = AuthService.create_user_with_quota(
-            db, user_data, barobill_registered
-        )
+        db_user = AuthService.create_user_with_quota(db, user_data, barobill_registered)
 
         # JWT 토큰 생성 (인증 서비스 사용)
         tokens = AuthService.create_tokens(db_user)
@@ -227,58 +235,31 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    request: Request = None,
-    db: Session = Depends(get_db)
-):
-    """
-    사용자 로그인
+def login(req: LoginRequest, request: Request = None, db: Session = Depends(get_db)):
+    # 사용자 조회
+    user = db.query(User).filter(User.barobill_id == req.username).first()
 
-    Args:
-        form_data: 로그인 정보 (username=barobill_id, password)
-        db: 데이터베이스 세션
-
-    Returns:
-        JWT 액세스 토큰
-    """
-    # 사용자 조회 (OAuth2PasswordRequestForm의 username 필드에 바로빌 아이디 사용)
-    user = db.query(User).filter(User.barobill_id == form_data.username).first()
-
-    if not user:
+    if not user or not verify_password(req.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="바로빌 아이디 또는 비밀번호가 올바르지 않습니다.",
-            headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 비밀번호 검증
-    password_valid = verify_password(form_data.password, user.password_hash)
-
-    if not password_valid:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="바로빌 아이디 또는 비밀번호가 올바르지 않습니다.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # 사용자 활성화 확인
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="비활성화된 사용자입니다."
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="비활성화된 사용자입니다.",
         )
 
-    # JWT 토큰 생성 (인증 서비스 사용)
     tokens = AuthService.create_tokens(user)
     refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     AuthService.save_refresh_token(
         db, user, tokens["refresh_token"], refresh_token_expires
     )
 
-    # 세션 정보 저장 (인증 서비스 사용)
     if request:
         user_agent = request.headers.get("User-Agent", "Unknown Device")
-        ip_address = request.client.host
+        ip_address = request.client.host if request.client else "0.0.0.0"
         AuthService.save_user_session(
             db, user, tokens["access_token"], user_agent, ip_address
         )
@@ -328,10 +309,10 @@ def check_username(username: str, db: Session = Depends(get_db)):
                 "available": False,
                 "message": "이미 사용 중인 아이디입니다.",
             }
-        
+
         # TODO: 바로빌 API로도 중복 확인 (필요시)
         # 현재는 우리 DB만 확인
-        
+
         return {
             "available": True,
             "message": "사용 가능한 아이디입니다.",
@@ -339,7 +320,7 @@ def check_username(username: str, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"아이디 중복 확인 중 오류가 발생했습니다: {str(e)}"
+            detail=f"아이디 중복 확인 중 오류가 발생했습니다: {str(e)}",
         )
 
 
@@ -482,7 +463,7 @@ def reset_password(request: PasswordReset, db: Session = Depends(get_db)):
         barobill_update_success, barobill_error = update_barobill_password(
             user, request.new_password
         )
-        
+
         new_password_hash = get_password_hash(request.new_password)
         user.password_hash = new_password_hash
         # 재설정 토큰 초기화
@@ -571,7 +552,7 @@ def reset_password_by_token(
         barobill_update_success, barobill_error = update_barobill_password(
             user, request.new_password
         )
-        
+
         new_password_hash = get_password_hash(request.new_password)
         user.password_hash = new_password_hash
         # 재설정 토큰 초기화 (한 번만 사용 가능)
@@ -652,7 +633,7 @@ def change_password(
         barobill_update_success, barobill_error = update_barobill_password(
             user, password_data.new_password
         )
-        
+
         # 로컬 DB 비밀번호 업데이트
         new_password_hash = get_password_hash(password_data.new_password)
         user.password_hash = new_password_hash
@@ -674,6 +655,7 @@ def change_password(
     except Exception as e:
         db.rollback()
         import traceback
+
         error_detail = traceback.format_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -683,8 +665,7 @@ def change_password(
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """
     현재 로그인한 사용자 정보 조회 (기존 JWT 방식 - 호환성 유지)
@@ -698,19 +679,20 @@ def get_current_user_info(
     """
     # DB에서 최신 정보 조회
     db.refresh(current_user)
-    
+
     # free_quota에서 무료 건수 조회
     from app.crud.free_quota import get_or_create_free_quota
     from app.models.payment_method import PaymentMethod
-    
+
     free_quota = get_or_create_free_quota(db, current_user.id)
     free_invoice_remaining = free_quota.free_invoice_left if free_quota else 0
-    
+
     # payment_methods에서 결제수단 등록 여부 확인
-    has_payment_method = db.query(PaymentMethod).filter(
-        PaymentMethod.user_id == current_user.id
-    ).first() is not None
-    
+    has_payment_method = (
+        db.query(PaymentMethod).filter(PaymentMethod.user_id == current_user.id).first()
+        is not None
+    )
+
     # UserResponse 스키마에 맞게 데이터 구성
     return UserResponse(
         id=current_user.id,
@@ -727,5 +709,3 @@ def get_current_user_info(
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
     )
-
-

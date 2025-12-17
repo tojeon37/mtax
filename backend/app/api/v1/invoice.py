@@ -99,8 +99,10 @@ def check_invoice_status(
     - 바로빌 API로 상태 조회 후 홈택스 전송 완료 시 "완료"로 업데이트
     """
     try:
-        # 바로빌 API 인증키 확인
-        if not settings.BAROBILL_CERT_KEY or not settings.BAROBILL_CORP_NUM:
+        # 바로빌 API 인증키 확인 (안전하게 속성 접근)
+        cert_key = getattr(settings, 'BAROBILL_CERT_KEY', None)
+        corp_num = getattr(settings, 'BAROBILL_CORP_NUM', None)
+        if not cert_key or not corp_num:
             return {
                 "success": False,
                 "message": "바로빌 API 인증키가 설정되지 않았습니다.",
