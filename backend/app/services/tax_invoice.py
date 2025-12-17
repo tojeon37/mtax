@@ -15,10 +15,10 @@ class TaxInvoiceService:
             corp_num: 사업자번호 (없으면 설정에서 가져옴)
         """
         # 안전하게 속성 접근 (속성이 없으면 기본값 사용)
-        self.cert_key = cert_key or getattr(settings, 'BAROBILL_CERT_KEY', None)
-        self.corp_num = corp_num or getattr(settings, 'BAROBILL_CORP_NUM', None)
-        use_test_server = getattr(settings, 'BAROBILL_USE_TEST_SERVER', False)
-        
+        self.cert_key = cert_key or getattr(settings, "BAROBILL_CERT_KEY", None)
+        self.corp_num = corp_num or getattr(settings, "BAROBILL_CORP_NUM", None)
+        use_test_server = getattr(settings, "BAROBILL_USE_TEST_SERVER", False)
+
         # 설정에서 테스트 서버 사용 여부 가져오기
         self.barobill = BaroBillService(
             cert_key=self.cert_key,

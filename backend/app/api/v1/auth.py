@@ -60,8 +60,8 @@ def update_barobill_password(user: User, new_password: str) -> Tuple[bool, str]:
         from app.core.barobill.barobill_member import BaroBillMemberService
 
         # 안전하게 속성 접근 (속성이 없으면 기본값 사용)
-        use_test_server = getattr(settings, 'BAROBILL_USE_TEST_SERVER', False)
-        
+        use_test_server = getattr(settings, "BAROBILL_USE_TEST_SERVER", False)
+
         barobill_service = BaroBillMemberService(
             cert_key=user.barobill_cert_key,
             corp_num=user.barobill_corp_num.replace("-", ""),

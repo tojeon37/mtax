@@ -100,8 +100,8 @@ def check_invoice_status(
     """
     try:
         # 바로빌 API 인증키 확인 (안전하게 속성 접근)
-        cert_key = getattr(settings, 'BAROBILL_CERT_KEY', None)
-        corp_num = getattr(settings, 'BAROBILL_CORP_NUM', None)
+        cert_key = getattr(settings, "BAROBILL_CERT_KEY", None)
+        corp_num = getattr(settings, "BAROBILL_CORP_NUM", None)
         if not cert_key or not corp_num:
             return {
                 "success": False,
@@ -323,7 +323,7 @@ def delete_invoice(
         )
 
     # 바로빌로 발행한 세금계산서는 삭제 불가 (취소만 가능)
-    if invoice.mgt_key and invoice.mgt_key != '':
+    if invoice.mgt_key and invoice.mgt_key != "":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="바로빌로 발행한 세금계산서는 삭제할 수 없습니다. 취소 기능을 사용해주세요.",
@@ -339,10 +339,7 @@ def delete_invoice(
     try:
         db.delete(invoice)
         db.commit()
-        return {
-            "success": True,
-            "message": "세금계산서가 삭제되었습니다."
-        }
+        return {"success": True, "message": "세금계산서가 삭제되었습니다."}
     except Exception as e:
         db.rollback()
         raise HTTPException(

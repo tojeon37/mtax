@@ -11,6 +11,11 @@ class UserBase(BaseModel):
     email: Optional[str] = None  # 이메일 (선택)
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
 class UserCreate(BaseModel):
     """사용자 생성 스키마"""
 

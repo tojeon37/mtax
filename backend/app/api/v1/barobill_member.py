@@ -45,10 +45,10 @@ class CertificateCheckResponse(BaseModel):
 def get_barobill_member_service() -> Optional[BaroBillMemberService]:
     """바로빌 회원 관리 서비스 의존성 (파트너 인증키 사용)"""
     # 안전하게 속성 접근 (속성이 없으면 None 반환)
-    cert_key = getattr(settings, 'BAROBILL_CERT_KEY', None)
-    corp_num = getattr(settings, 'BAROBILL_CORP_NUM', None)
-    use_test_server = getattr(settings, 'BAROBILL_USE_TEST_SERVER', False)
-    
+    cert_key = getattr(settings, "BAROBILL_CERT_KEY", None)
+    corp_num = getattr(settings, "BAROBILL_CORP_NUM", None)
+    use_test_server = getattr(settings, "BAROBILL_USE_TEST_SERVER", False)
+
     if not cert_key or not corp_num:
         # 개발 모드에서는 바로빌 API 없이도 동작 가능
         return None
@@ -62,10 +62,10 @@ def get_barobill_member_service() -> Optional[BaroBillMemberService]:
 def get_barobill_auth_service() -> Optional[BaroBillAuthService]:
     """바로빌 인증 서비스 의존성 (파트너 인증키 사용)"""
     # 안전하게 속성 접근 (속성이 없으면 None 반환)
-    cert_key = getattr(settings, 'BAROBILL_CERT_KEY', None)
-    corp_num = getattr(settings, 'BAROBILL_CORP_NUM', None)
-    use_test_server = getattr(settings, 'BAROBILL_USE_TEST_SERVER', False)
-    
+    cert_key = getattr(settings, "BAROBILL_CERT_KEY", None)
+    corp_num = getattr(settings, "BAROBILL_CORP_NUM", None)
+    use_test_server = getattr(settings, "BAROBILL_USE_TEST_SERVER", False)
+
     if not cert_key or not corp_num:
         # 개발 모드에서는 바로빌 API 없이도 동작 가능
         return None
@@ -152,7 +152,9 @@ def auto_link_barobill(
     request: AutoLinkRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    partner_service: Optional[BaroBillMemberService] = Depends(get_barobill_member_service),
+    partner_service: Optional[BaroBillMemberService] = Depends(
+        get_barobill_member_service
+    ),
 ):
     """
     회사 정보 저장 후 바로빌 자동 연동

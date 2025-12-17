@@ -18,7 +18,9 @@ class Settings(BaseSettings):
     # =========================
     # JWT & Security
     # =========================
-    SECRET_KEY: str = "your-secret-key-change-in-production"  # Cloud Run 환경변수에서 주입 권장
+    SECRET_KEY: str = (
+        "your-secret-key-change-in-production"  # Cloud Run 환경변수에서 주입 권장
+    )
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
