@@ -249,7 +249,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     request: Request = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     # 사용자 조회
     user = db.query(User).filter(User.barobill_id == form_data.username).first()
@@ -778,66 +778,66 @@ def update_current_user_info(
         db.flush()
 
         # 바로빌 연동이 되어있는 경우 바로빌에도 업데이트
+        # UpdateCorpInfo는 파트너가 하위 회원사 정보를 수정하는 API이므로 파트너 서비스를 사용해야 함
         barobill_update_success = False
         barobill_error = None
 
         if user.barobill_linked and user.barobill_cert_key and user.barobill_corp_num:
-            try:
-                from app.core.barobill.barobill_member import BaroBillMemberService
-                from app.core.config import settings
+            # 파트너 서비스 가져오기
+            partner_service = CompanyService.get_barobill_partner_service()
 
-                use_test_server = getattr(settings, "BAROBILL_USE_TEST_SERVER", False)
+            if partner_service:
+                try:
+                    # 수정할 회원사의 사업자번호 (user.barobill_corp_num 사용)
+                    target_corp_num = user.barobill_corp_num.replace("-", "").strip()
 
-                barobill_service = BaroBillMemberService(
-                    cert_key=user.barobill_cert_key,
-                    corp_num=user.barobill_corp_num.replace("-", ""),
-                    use_test_server=use_test_server,
-                )
+                    if not target_corp_num or len(target_corp_num) != 10:
+                        raise Exception("유효하지 않은 사업자번호입니다.")
 
-                # 회사 정보 업데이트 (제공된 경우에만)
-                if (
-                    user_update.company_name
-                    or user_update.ceo_name
-                    or user_update.address
-                    or user_update.biz_type
-                    or user_update.biz_item
-                ):
-                    barobill_service.update_corp_info(
-                        corp_num=user.barobill_corp_num,
-                        corp_name=user_update.company_name or user.biz_name or "",
-                        ceo_name=user_update.ceo_name or "",
-                        biz_type=user_update.biz_type or "",
-                        biz_class=user_update.biz_item or "",
-                        post_num="",
-                        addr1=user_update.address or "",
-                        addr2="",
-                    )
+                    # 회사 정보 업데이트 (제공된 경우에만)
+                    if (
+                        user_update.company_name
+                        or user_update.ceo_name
+                        or user_update.address
+                        or user_update.biz_type
+                        or user_update.biz_item
+                    ):
+                        partner_service.update_corp_info(
+                            corp_num=target_corp_num,  # 수정할 회원사 사업자번호
+                            corp_name=user_update.company_name or user.biz_name or "",
+                            ceo_name=user_update.ceo_name or "",
+                            biz_type=user_update.biz_type or "",
+                            biz_class=user_update.biz_item or "",
+                            post_num="",
+                            addr1=user_update.address or "",
+                            addr2="",
+                        )
 
-                # 사용자 정보 업데이트 (제공된 경우에만)
-                if (
-                    user_update.email
-                    or user_update.manager_name
-                    or user_update.tel
-                    or user_update.manager_tel
-                ):
-                    barobill_service.update_user_info(
-                        corp_num=user.barobill_corp_num,
-                        user_id=user.barobill_id,
-                        member_name=user_update.manager_name or "",
-                        tel=user_update.tel or "",
-                        hp=user_update.manager_tel or "",
-                        email=user_update.email or user.email or "",
-                        grade="",
-                    )
+                    # 사용자 정보 업데이트 (제공된 경우에만)
+                    if (
+                        user_update.email
+                        or user_update.manager_name
+                        or user_update.tel
+                        or user_update.manager_tel
+                    ):
+                        partner_service.update_user_info(
+                            corp_num=target_corp_num,  # 수정할 회원사 사업자번호
+                            user_id=user.barobill_id,
+                            member_name=user_update.manager_name or "",
+                            tel=user_update.tel or "",
+                            hp=user_update.manager_tel or "",
+                            email=user_update.email or user.email or "",
+                            grade="",
+                        )
 
-                barobill_update_success = True
-            except Exception as e:
-                import logging
+                    barobill_update_success = True
+                except Exception as e:
+                    import logging
 
-                logger = logging.getLogger(__name__)
-                logger.warning(f"바로빌 정보 업데이트 실패: {str(e)}")
-                barobill_error = str(e)
-                # 바로빌 업데이트 실패해도 우리 DB는 업데이트 진행
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"바로빌 정보 업데이트 실패: {str(e)}")
+                    barobill_error = str(e)
+                    # 바로빌 업데이트 실패해도 우리 DB는 업데이트 진행
 
         db.commit()
         db.refresh(user)
