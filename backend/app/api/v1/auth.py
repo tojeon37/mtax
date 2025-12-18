@@ -1,9 +1,9 @@
 from datetime import timedelta, datetime
 from typing import Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from starlette.requests import Request
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -246,11 +246,15 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-def login(req: LoginRequest, request: Request = None, db: Session = Depends(get_db)):
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    request: Request = None,
+    db: Session = Depends(get_db)
+):
     # 사용자 조회
-    user = db.query(User).filter(User.barobill_id == req.username).first()
+    user = db.query(User).filter(User.barobill_id == form_data.username).first()
 
-    if not user or not verify_password(req.password, user.password_hash):
+    if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="바로빌 아이디 또는 비밀번호가 올바르지 않습니다.",
