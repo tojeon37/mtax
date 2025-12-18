@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../hooks/useAuth'
 import { checkUsername } from '../api/authApi'
+import { formatError } from '../utils/errorHelpers'
 
 interface SignupFormData {
   username: string
@@ -152,30 +153,7 @@ export const Signup: React.FC = () => {
       console.error('회원가입 오류 전체:', err)
       console.error('회원가입 오류 응답:', err.response?.data)
       console.error('회원가입 오류 detail:', JSON.stringify(err.response?.data?.detail, null, 2))
-      let errorMessage = '회원가입에 실패했습니다. 다시 시도해주세요.'
-      
-      if (err.response?.data?.detail) {
-        const detail = err.response.data.detail
-        // FastAPI의 422 에러는 배열 형태로 오는 경우가 있음
-        if (Array.isArray(detail)) {
-          errorMessage = detail.map((item: any) => {
-            if (typeof item === 'string') return item
-            if (item.msg) {
-              const field = item.loc?.slice(-1)[0] || '필드'
-              return `${field}: ${item.msg}`
-            }
-            return JSON.stringify(item)
-          }).join(', ')
-        } else if (typeof detail === 'string') {
-          errorMessage = detail
-        } else {
-          errorMessage = JSON.stringify(detail)
-        }
-      } else if (err.message) {
-        errorMessage = err.message
-      }
-      
-      setError(errorMessage)
+      setError(formatError(err) || '회원가입에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setIsLoading(false)
     }

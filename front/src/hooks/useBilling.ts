@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import axiosInstance from '../api/axiosInstance'
+import { formatError } from '../utils/errorHelpers'
 
 interface BillingCycle {
   id: number
@@ -34,7 +35,7 @@ export const useBillingCycles = () => {
       setCycles(res.data)
       setError(null)
     } catch (err: any) {
-      setError(err.response?.data?.detail || '청구서 목록을 불러올 수 없습니다.')
+      setError(formatError(err) || '청구서 목록을 불러올 수 없습니다.')
     } finally {
       setIsLoading(false)
     }
@@ -59,7 +60,7 @@ export const useCurrentMonthSummary = () => {
       setSummary(res.data)
       setError(null)
     } catch (err: any) {
-      setError(err.response?.data?.detail || '요약 정보를 불러올 수 없습니다.')
+      setError(formatError(err) || '요약 정보를 불러올 수 없습니다.')
     } finally {
       setIsLoading(false)
     }
@@ -91,7 +92,7 @@ export const useFreeQuota = () => {
       setQuota(res.data)
       setError(null)
     } catch (err: any) {
-      setError(err.response?.data?.detail || '무료 제공 정보를 불러올 수 없습니다.')
+      setError(formatError(err) || '무료 제공 정보를 불러올 수 없습니다.')
     } finally {
       setIsLoading(false)
     }

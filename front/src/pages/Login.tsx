@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../hooks/useAuth'
+import { formatError } from '../utils/errorHelpers'
 
 interface LoginFormData {
   username: string
@@ -42,10 +43,7 @@ export const Login: React.FC = () => {
       const from = (location.state as any)?.from?.pathname || '/invoice/quick'
       navigate(from, { replace: true })
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail ||
-          '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.'
-      )
+      setError(formatError(err) || '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.')
     } finally {
       setIsLoading(false)
     }

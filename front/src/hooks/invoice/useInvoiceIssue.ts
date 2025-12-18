@@ -3,6 +3,7 @@
  */
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { formatError } from '../../utils/errorHelpers'
 import { useInvoiceStore } from '../../store/invoiceStore'
 import { useAuth } from '../useAuth'
 import { createInvoice } from '../../api/invoiceApi'
@@ -71,7 +72,7 @@ export const useInvoiceIssue = () => {
       
       return { success: true }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || '세금계산서 발행에 실패했습니다.'
+      const errorMessage = formatError(error) || '세금계산서 발행에 실패했습니다.'
       alert(`발행 실패: ${errorMessage}`)
       return { success: false, error: errorMessage }
     } finally {

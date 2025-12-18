@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import axiosInstance from '../api/axiosInstance'
+import { formatError } from '../utils/errorHelpers'
 
 interface UsageLog {
   id: number
@@ -37,7 +38,7 @@ export const useUsageLogs = (page: number = 1, limit: number = 50) => {
       setHasMore(newLogs.length === limit)
       setError(null)
     } catch (err: any) {
-      setError(err.response?.data?.detail || '사용 내역을 불러올 수 없습니다.')
+      setError(formatError(err) || '사용 내역을 불러올 수 없습니다.')
     } finally {
       setIsLoading(false)
     }

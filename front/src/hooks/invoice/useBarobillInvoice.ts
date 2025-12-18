@@ -3,6 +3,7 @@
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { formatError } from '../../utils/errorHelpers'
 import { useInvoiceStore } from '../../store/invoiceStore'
 import { useCompanyStore } from '../../store/useCompanyStore'
 import { issueBarobillInvoice, BarobillInvoiceData } from '../../api/invoiceBarobillApi'
@@ -152,7 +153,7 @@ export const useBarobillInvoice = () => {
         throw new Error(response.message || '발행 실패')
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || '세금계산서 발행 중 오류가 발생했습니다.'
+      const errorMessage = formatError(error) || '세금계산서 발행 중 오류가 발생했습니다.'
 
       // 인증서 관련 에러인 경우 특별 처리
       if (
