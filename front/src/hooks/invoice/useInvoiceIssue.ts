@@ -46,7 +46,12 @@ export const useInvoiceIssue = () => {
     if (!companyValidation.isValid) {
       const shouldGoToRegister = confirm(companyValidation.message)
       if (shouldGoToRegister) {
-        navigate('/certificate')
+        // 우리회사 정보가 없으면 회사 등록 페이지로, 공동인증서만 없으면 인증서 페이지로
+        if (!companyValidation.hasCompany) {
+          navigate('/company/new')
+        } else {
+          navigate('/certificate')
+        }
       }
       return
     }

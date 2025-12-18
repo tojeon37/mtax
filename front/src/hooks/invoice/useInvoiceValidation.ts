@@ -55,11 +55,24 @@ export const useInvoiceValidation = () => {
     }
 
     if (!hasCompany || !hasCertificate) {
+      // 메시지를 조건부로 생성
+      let message = ''
+      if (hasCompany && !hasCertificate) {
+        // 우리회사 정보는 등록되어 있고 공동인증서만 없는 경우
+        message = '"공동인증서"가 아직 등록되지 않아\n\n전자세금계산서를 발행할 수 없습니다.\n\n인증서 등록 페이지로 이동하시겠습니까?'
+      } else if (!hasCompany && hasCertificate) {
+        // 공동인증서는 등록되어 있고 우리회사 정보만 없는 경우 (거의 없을 것)
+        message = '"우리회사 정보"가 아직 등록되지 않아\n\n전자세금계산서를 발행할 수 없습니다.\n\n등록 페이지로 이동하시겠습니까?'
+      } else {
+        // 둘 다 없는 경우
+        message = '"우리회사 정보"와 "공동인증서"가 아직 등록되지 않아\n\n전자세금계산서를 발행할 수 없습니다.\n\n등록 페이지로 이동하시겠습니까?'
+      }
+
       return {
         isValid: false,
         hasCompany,
         hasCertificate,
-        message: '"우리회사 정보"와 "공동인증서"가 아직 등록되지 않아\n\n전자세금계산서를 발행할 수 없습니다.\n\n등록 페이지로 이동하시겠습니까?',
+        message,
       }
     }
 
@@ -77,4 +90,3 @@ export const useInvoiceValidation = () => {
     validateCompanyAndCertificate,
   }
 }
-
