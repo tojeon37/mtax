@@ -20,6 +20,18 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose }) => {
     onClose()
   }
 
+  // barobill_id에서 "회사_" 접두사 제거
+  const getDisplayName = () => {
+    if (currentCompany?.name) {
+      return currentCompany.name
+    }
+    if (user?.barobill_id) {
+      // "회사_" 접두사 제거
+      return user.barobill_id.replace(/^회사_/, '')
+    }
+    return '사용자'
+  }
+
   if (!isOpen) return null
 
   return (
@@ -61,7 +73,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose }) => {
             <div className="px-4 py-2">
               {isAuthenticated && (
                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                  {currentCompany?.name || user?.barobill_id || '사용자'}
+                  {getDisplayName()}
                 </p>
               )}
               {/* 다크모드 토글 */}

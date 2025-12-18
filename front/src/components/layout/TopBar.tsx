@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MenuDrawer } from './MenuDrawer'
 import { useAuth } from '../../hooks/useAuth'
@@ -8,7 +8,27 @@ export const TopBar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
-  const { currentCompany } = useCompanyStore()
+  const { currentCompany, loadCurrentCompany } = useCompanyStore()
+
+  // 로그인 후 currentCompany가 없으면 자동으로 로드
+  useEffect(() => {
+    if (isAuthenticated && !currentCompany) {
+      console.log('[TopBar] currentCompany가 없어서 로드 시도')
+      loadCurrentCompany()
+    }
+  }, [isAuthenticated, currentCompany, loadCurrentCompany])
+
+  // barobill_id에서 "회사_" 접두사 제거
+  const getDisplayName = () => {
+    if (currentCompany?.name) {
+      return currentCompany.name
+    }
+    if (user?.barobill_id) {
+      // "회사_" 접두사 제거
+      return user.barobill_id.replace(/^회사_/, '')
+    }
+    return ''
+  }
 
   return (
     <>
@@ -41,7 +61,7 @@ export const TopBar: React.FC = () => {
               </>
             ) : (
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate max-w-[100px]">
-                {currentCompany?.name || user?.barobill_id}
+                {getDisplayName()}
               </span>
             )}
             <button
@@ -71,4 +91,3 @@ export const TopBar: React.FC = () => {
     </>
   )
 }
-
