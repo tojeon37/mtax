@@ -9,22 +9,23 @@ export interface AutoLinkRequest {
 export interface AutoLinkResponse {
   success: boolean;
   message: string;
+  resultCode?: number;  // 바로빌 API 응답 코드 (0: 성공, -32000: 이미 가입된 사업자)
 }
 
 export const autoLinkBarobill = async (companyId: number, password?: string): Promise<AutoLinkResponse> => {
   try {
     // 세션 스토리지에서 비밀번호 가져오기 (없으면 파라미터 사용)
     const barobillPassword = password || sessionStorage.getItem('barobill_password')
-    
+
     const requestBody: AutoLinkRequest = {
       company_id: companyId,
     }
-    
+
     // 비밀번호가 있으면 추가
     if (barobillPassword) {
       requestBody.password = barobillPassword
     }
-    
+
     const res = await axios.post<AutoLinkResponse>("/barobill/auto-link", requestBody);
     return res.data;
   } catch (error: any) {
@@ -126,7 +127,7 @@ export const checkCertificate = async (password?: string): Promise<CertificateCh
   try {
     // 세션 스토리지에서 비밀번호 가져오기 (없으면 파라미터 사용)
     const barobillPassword = password || sessionStorage.getItem('barobill_password');
-    
+
     if (!barobillPassword) {
       return {
         is_valid: false,
@@ -134,11 +135,11 @@ export const checkCertificate = async (password?: string): Promise<CertificateCh
         regist_url: null,
       };
     }
-    
+
     const requestBody: CertificateCheckRequest = {
       password: barobillPassword,
     };
-    
+
     const res = await axios.post<CertificateCheckResponse>("/barobill/certificate/check", requestBody);
     return res.data;
   } catch (error: any) {

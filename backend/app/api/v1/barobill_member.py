@@ -26,6 +26,7 @@ class AutoLinkResponse(BaseModel):
 
     success: bool
     message: str
+    resultCode: Optional[int] = None  # 바로빌 API 응답 코드 (0: 성공, -32000: 이미 가입된 사업자)
 
 
 class CertificateCheckRequest(BaseModel):
@@ -254,6 +255,7 @@ def auto_link_barobill(
             )
 
         barobill_registered = False
+        result_code = None
         try:
             barobill_result = partner_service.regist_corp_member(
                 corp_num=corp_num_clean,
@@ -272,7 +274,19 @@ def auto_link_barobill(
                 hp=company.hp or "",
                 email=company.email,
             )
-            barobill_registered = True
+            result_code = barobill_result.get("result_code")
+            # result_code가 0 또는 -32000이면 성공으로 처리
+            # -32000: 이미 가입된 연계사업자 (이미 등록된 경우도 성공으로 처리)
+            if result_code in [0, -32000]:
+                barobill_registered = True
+            else:
+                # 다른 에러 코드인 경우 실패로 처리
+                error_msg = barobill_result.get("message", f"바로빌 회원사 가입 실패 (코드: {result_code})")
+                return AutoLinkResponse(
+                    success=False,
+                    message=f"바로빌 연동 중 오류가 발생했습니다: {error_msg}. 관리자에게 문의해주세요.",
+                    resultCode=result_code,
+                )
         except Exception as barobill_error:
             # 바로빌 연동 실패해도 에러를 발생시키지 않고 경고만 반환
             # 사용자가 나중에 다시 시도할 수 있도록 함
@@ -280,6 +294,7 @@ def auto_link_barobill(
             return AutoLinkResponse(
                 success=False,
                 message=f"바로빌 연동 중 오류가 발생했습니다: {error_msg}. 관리자에게 문의해주세요.",
+                resultCode=result_code,
             )
 
         # 사용자 정보 업데이트
@@ -290,13 +305,22 @@ def auto_link_barobill(
             db.commit()
             db.refresh(current_user)
 
+            # result_code에 따라 메시지 결정
+            if result_code == -32000:
+                message = "이미 바로빌에 등록된 사업자입니다. 기존 정보로 연동을 완료했습니다."
+            else:
+                message = "바로빌 연동이 완료되었습니다."
+
             return AutoLinkResponse(
-                success=True, message="바로빌 연동이 완료되었습니다."
+                success=True,
+                message=message,
+                resultCode=result_code,
             )
         else:
             return AutoLinkResponse(
                 success=False,
                 message="바로빌 연동에 실패했습니다. 관리자에게 문의해주세요.",
+                resultCode=result_code,
             )
 
     except HTTPException:

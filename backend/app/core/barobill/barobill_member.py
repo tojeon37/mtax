@@ -150,7 +150,11 @@ class BaroBillMemberService(BaroBillService):
 
             result = self.client.get_common_client().service.RegistCorp(**api_params)
 
-            if result < 0:  # 호출 실패
+            # result_code가 0 또는 -32000이면 성공으로 처리
+            # -32000: 이미 가입된 연계사업자 (이미 등록된 경우도 성공으로 처리)
+            OK_CODES = [0, -32000]
+            
+            if result not in OK_CODES:  # 호출 실패
                 error_msg = self.get_err_string(result)
                 raise Exception(
                     f"바로빌 회원사 가입 실패: {error_msg} (코드: {result})"
@@ -160,11 +164,17 @@ class BaroBillMemberService(BaroBillService):
             # 일반적으로 RegistCorp 성공 후 별도 API로 인증키를 조회해야 할 수 있음
             # 여기서는 성공 코드만 반환하고, 인증키는 별도 조회 API 사용 권장
 
+            # result_code에 따라 메시지 결정
+            if result == -32000:
+                message = "이미 바로빌에 등록된 사업자입니다. 기존 정보로 연동을 계속합니다."
+            else:
+                message = "바로빌 회원사 가입이 완료되었습니다."
+
             return {
                 "success": True,
                 "result_code": result,
                 "corp_num": corp_num_clean,
-                "message": "바로빌 회원사 가입이 완료되었습니다.",
+                "message": message,
             }
         except Exception as e:
             raise
