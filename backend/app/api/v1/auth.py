@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from app.db.session import get_db
 from app.schemas.user import (
     UserCreate,
+    UserUpdate,
     UserResponse,
     Token,
     PasswordResetRequest,
@@ -161,7 +162,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         barobill_service = CompanyService.get_barobill_partner_service()
         barobill_registered = False
         barobill_error = None
-        
+
         if barobill_service:
             user_data = {
                 "barobill_id": user.barobill_id,
@@ -178,13 +179,14 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
                 "manager_tel": user.manager_tel,
                 "email": user.email,
             }
-            barobill_registered, barobill_error = CompanyService.register_barobill_member(
-                barobill_service, user_data
+            barobill_registered, barobill_error = (
+                CompanyService.register_barobill_member(barobill_service, user_data)
             )
-            
+
             # 바로빌 연동 실패 시 에러 메시지 로깅 (하지만 우리 DB에는 계속 등록)
             if barobill_error:
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.warning(f"바로빌 연동 실패: {barobill_error}")
                 # 바로빌 연동 실패해도 우리 DB에는 등록 진행 (barobill_registered=False)
@@ -718,3 +720,168 @@ def get_current_user_info(
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
     )
+
+
+@router.put("/me", response_model=UserResponse)
+def update_current_user_info(
+    user_update: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    현재 로그인한 사용자 정보 수정 및 바로빌 업데이트
+
+    Args:
+        user_update: 수정할 사용자 정보
+        current_user: 현재 로그인한 사용자 (의존성 주입)
+        db: 데이터베이스 세션
+
+    Returns:
+        수정된 사용자 정보
+    """
+    try:
+        # DB에서 최신 정보 조회
+        user = db.query(User).filter(User.id == current_user.id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="사용자를 찾을 수 없습니다.",
+            )
+
+        # 우리 DB 정보 업데이트
+        if user_update.email is not None:
+            # 이메일 중복 확인 (다른 사용자가 사용 중인지)
+            existing_user = (
+                db.query(User)
+                .filter(User.email == user_update.email, User.id != user.id)
+                .first()
+            )
+            if existing_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="이미 사용 중인 이메일입니다.",
+                )
+            user.email = user_update.email
+
+        if user_update.biz_name is not None:
+            user.biz_name = user_update.biz_name
+
+        if user_update.is_active is not None:
+            # 일반 사용자는 자신의 활성화 상태를 변경할 수 없음 (관리자만 가능)
+            # 여기서는 무시하거나 에러 반환
+            pass
+
+        db.flush()
+
+        # 바로빌 연동이 되어있는 경우 바로빌에도 업데이트
+        barobill_update_success = False
+        barobill_error = None
+
+        if user.barobill_linked and user.barobill_cert_key and user.barobill_corp_num:
+            try:
+                from app.core.barobill.barobill_member import BaroBillMemberService
+                from app.core.config import settings
+
+                use_test_server = getattr(settings, "BAROBILL_USE_TEST_SERVER", False)
+
+                barobill_service = BaroBillMemberService(
+                    cert_key=user.barobill_cert_key,
+                    corp_num=user.barobill_corp_num.replace("-", ""),
+                    use_test_server=use_test_server,
+                )
+
+                # 회사 정보 업데이트 (제공된 경우에만)
+                if (
+                    user_update.company_name
+                    or user_update.ceo_name
+                    or user_update.address
+                    or user_update.biz_type
+                    or user_update.biz_item
+                ):
+                    barobill_service.update_corp_info(
+                        corp_num=user.barobill_corp_num,
+                        corp_name=user_update.company_name or user.biz_name or "",
+                        ceo_name=user_update.ceo_name or "",
+                        biz_type=user_update.biz_type or "",
+                        biz_class=user_update.biz_item or "",
+                        post_num="",
+                        addr1=user_update.address or "",
+                        addr2="",
+                    )
+
+                # 사용자 정보 업데이트 (제공된 경우에만)
+                if (
+                    user_update.email
+                    or user_update.manager_name
+                    or user_update.tel
+                    or user_update.manager_tel
+                ):
+                    barobill_service.update_user_info(
+                        corp_num=user.barobill_corp_num,
+                        user_id=user.barobill_id,
+                        member_name=user_update.manager_name or "",
+                        tel=user_update.tel or "",
+                        hp=user_update.manager_tel or "",
+                        email=user_update.email or user.email or "",
+                        grade="",
+                    )
+
+                barobill_update_success = True
+            except Exception as e:
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.warning(f"바로빌 정보 업데이트 실패: {str(e)}")
+                barobill_error = str(e)
+                # 바로빌 업데이트 실패해도 우리 DB는 업데이트 진행
+
+        db.commit()
+        db.refresh(user)
+
+        # free_quota에서 무료 건수 조회
+        from app.crud.free_quota import get_or_create_free_quota
+        from app.models.payment_method import PaymentMethod
+
+        free_quota = get_or_create_free_quota(db, user.id)
+        free_invoice_remaining = free_quota.free_invoice_left if free_quota else 0
+
+        # payment_methods에서 결제수단 등록 여부 확인
+        has_payment_method = (
+            db.query(PaymentMethod).filter(PaymentMethod.user_id == user.id).first()
+            is not None
+        )
+
+        # 응답 메시지 구성
+        message = "사용자 정보가 성공적으로 수정되었습니다."
+        if barobill_update_success:
+            message += " 바로빌 정보도 함께 업데이트되었습니다."
+        elif barobill_error:
+            message += f" 다만 바로빌 정보 업데이트 중 오류가 발생했습니다: {barobill_error}"
+
+        # UserResponse 스키마에 맞게 데이터 구성
+        return UserResponse(
+            id=user.id,
+            barobill_id=user.barobill_id,
+            email=user.email,
+            biz_name=user.biz_name,
+            is_active=user.is_active,
+            barobill_corp_num=user.barobill_corp_num,
+            barobill_cert_key=user.barobill_cert_key,
+            barobill_linked=user.barobill_linked,
+            barobill_linked_at=user.barobill_linked_at,
+            free_invoice_remaining=free_invoice_remaining,
+            has_payment_method=has_payment_method,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        import traceback
+
+        error_detail = traceback.format_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"사용자 정보 수정 중 오류가 발생했습니다: {str(e)}",
+        )

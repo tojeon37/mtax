@@ -39,7 +39,16 @@ class UserUpdate(BaseModel):
     """사용자 업데이트 스키마"""
 
     email: Optional[str] = None  # 이메일 (선택)
-    biz_name: Optional[str] = None
+    biz_name: Optional[str] = None  # 회사명
+    # 바로빌 업데이트를 위한 추가 정보 (선택)
+    company_name: Optional[str] = None  # 상호
+    ceo_name: Optional[str] = None  # 대표자명
+    address: Optional[str] = None  # 사업장 주소
+    biz_type: Optional[str] = None  # 업태
+    biz_item: Optional[str] = None  # 종목
+    tel: Optional[str] = None  # 전화번호
+    manager_name: Optional[str] = None  # 담당자 이름
+    manager_tel: Optional[str] = None  # 담당자 휴대폰
     is_active: Optional[bool] = None
 
 
