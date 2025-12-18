@@ -160,6 +160,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         # 바로빌 회원가입 API 호출 (회사 서비스 사용)
         barobill_service = CompanyService.get_barobill_partner_service()
         barobill_registered = False
+        barobill_error = None
+        
         if barobill_service:
             user_data = {
                 "barobill_id": user.barobill_id,
@@ -176,9 +178,16 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
                 "manager_tel": user.manager_tel,
                 "email": user.email,
             }
-            barobill_registered = CompanyService.register_barobill_member(
+            barobill_registered, barobill_error = CompanyService.register_barobill_member(
                 barobill_service, user_data
             )
+            
+            # 바로빌 연동 실패 시 에러 메시지 로깅 (하지만 우리 DB에는 계속 등록)
+            if barobill_error:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"바로빌 연동 실패: {barobill_error}")
+                # 바로빌 연동 실패해도 우리 DB에는 등록 진행 (barobill_registered=False)
 
         # 사용자 생성 및 무료 쿼터 지급 (인증 서비스 사용)
         user_data = {

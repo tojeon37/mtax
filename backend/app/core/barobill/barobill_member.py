@@ -205,3 +205,125 @@ class BaroBillMemberService(BaroBillService):
         except Exception as e:
             raise
 
+    def update_corp_info(
+        self,
+        corp_num: str,
+        corp_name: str,
+        ceo_name: str,
+        biz_type: Optional[str],
+        biz_class: Optional[str],
+        post_num: Optional[str],
+        addr1: str,
+        addr2: Optional[str],
+    ) -> dict:
+        """
+        바로빌 회원사 정보 수정
+
+        Args:
+            corp_num: 사업자번호 (하이픈 없이)
+            corp_name: 상호명
+            ceo_name: 대표자명
+            biz_type: 업태
+            biz_class: 종목
+            post_num: 우편번호
+            addr1: 주소1
+            addr2: 주소2
+
+        Returns:
+            결과 딕셔너리 (success, result_code, message)
+        """
+        try:
+            corp_num_clean = corp_num.replace("-", "")
+            
+            result = self.client.get_common_client().service.UpdateCorpInfo(
+                CERTKEY=self.client.cert_key,
+                CorpNum=corp_num_clean,
+                CorpName=corp_name or "",
+                CEOName=ceo_name or "",
+                BizType=biz_type or "",
+                BizClass=biz_class or "",
+                PostNum=post_num or "",
+                Addr1=addr1 or "",
+                Addr2=addr2 or "",
+            )
+
+            if result < 0:  # 호출 실패
+                error_msg = self.get_err_string(result)
+                raise Exception(
+                    f"바로빌 회원사 정보 수정 실패: {error_msg} (코드: {result})"
+                )
+
+            return {
+                "success": True,
+                "result_code": result,
+                "message": "바로빌 회원사 정보가 성공적으로 수정되었습니다.",
+            }
+        except Exception as e:
+            raise
+
+    def update_user_info(
+        self,
+        corp_num: str,
+        user_id: str,
+        member_name: str,
+        tel: Optional[str],
+        hp: Optional[str],
+        email: str,
+        grade: Optional[str],
+    ) -> dict:
+        """
+        바로빌 사용자 정보 수정
+
+        Args:
+            corp_num: 사업자번호 (하이픈 없이)
+            user_id: 바로빌 아이디
+            member_name: 담당자명
+            tel: 전화번호
+            hp: 휴대폰번호
+            email: 이메일
+            grade: 등급
+
+        Returns:
+            결과 딕셔너리 (success, result_code, message)
+        """
+        try:
+            corp_num_clean = corp_num.replace("-", "")
+            
+            # 전화번호 형식 정리
+            tel_clean = None
+            if tel:
+                tel_digits = "".join(filter(str.isdigit, tel))
+                if tel_digits and len(tel_digits) >= 8:
+                    tel_clean = tel_digits
+
+            hp_clean = None
+            if hp:
+                hp_digits = "".join(filter(str.isdigit, hp))
+                if hp_digits and len(hp_digits) >= 10:
+                    hp_clean = hp_digits
+
+            result = self.client.get_common_client().service.UpdateUserInfo(
+                CERTKEY=self.client.cert_key,
+                CorpNum=corp_num_clean,
+                ID=user_id,
+                MemberName=member_name or "",
+                TEL=tel_clean or "",
+                HP=hp_clean or "",
+                Email=email.strip() if email else "",
+                Grade=grade or "",
+            )
+
+            if result < 0:  # 호출 실패
+                error_msg = self.get_err_string(result)
+                raise Exception(
+                    f"바로빌 사용자 정보 수정 실패: {error_msg} (코드: {result})"
+                )
+
+            return {
+                "success": True,
+                "result_code": result,
+                "message": "바로빌 사용자 정보가 성공적으로 수정되었습니다.",
+            }
+        except Exception as e:
+            raise
+
