@@ -3,11 +3,13 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { formatBizNumber, fixEmailTypo } from '../utils/formHelpers'
 import AddressSearch from '../components/AddressSearch'
 import { getCompanies, createCompany, updateCompany } from '../api/companyApi'
+import { useCompanyStore } from '../store/useCompanyStore'
 
 const CompanyEditPage: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams<{ id: string }>()
+  const { loadCurrentCompany } = useCompanyStore()
   // /company/new 경로이거나 id가 'new'인 경우 새로 등록
   const isNew = location.pathname === '/company/new' || id === 'new'
 
@@ -117,6 +119,9 @@ const CompanyEditPage: React.FC = () => {
         console.error('예상치 못한 상황:', { isNew, id, pathname: location.pathname })
         throw new Error('저장할 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.')
       }
+      
+      // 저장 후 회사 정보 다시 로드 (상단 메뉴바 업데이트를 위해)
+      await loadCurrentCompany()
       
       // 저장 후 목록 페이지로 이동 (목록이 자동으로 다시 불러와짐)
       navigate('/company', { replace: true })

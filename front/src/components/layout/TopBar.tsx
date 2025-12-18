@@ -8,6 +8,7 @@ export const TopBar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
+  const { currentCompany } = useCompanyStore()
 
   return (
     <>
