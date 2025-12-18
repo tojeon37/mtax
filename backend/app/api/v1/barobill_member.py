@@ -263,7 +263,7 @@ def auto_link_barobill(
                 biz_class=company.biz_class or "",
                 post_num="",
                 addr1=company.address,
-                addr2=company.address_detail or "",
+                addr2="",  # address_detail 컬럼이 제거되어 빈 문자열 사용
                 member_name=company.ceo_name,
                 member_id=current_user.barobill_id,
                 member_pwd=request.password,  # 평문 비밀번호 사용
