@@ -26,12 +26,18 @@ class Settings(BaseSettings):
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
 
     # =========================
-    # 바로빌 설정 (Optional - 회원가입 시 불필요)
-    # 사용자가 회사 정보 입력 시 자신의 인증키를 입력하는 구조
+    # 바로빌 파트너 설정 (필수 - 회원가입 시 바로빌 연동에 필요)
+    # 파트너 인증키를 사용하여 하위 회원사를 바로빌에 등록/관리
     # =========================
-    BAROBILL_CERT_KEY: Optional[str] = None  # 파트너 서비스용 (회원가입 시 불필요)
-    BAROBILL_CORP_NUM: Optional[str] = None  # 파트너 서비스용 (회원가입 시 불필요)
-    BAROBILL_USE_TEST_SERVER: bool = False  # 테스트 서버 사용 여부
+    BAROBILL_CERT_KEY: Optional[str] = (
+        None  # 파트너 인증키 (회원가입 시 바로빌 연동에 필요)
+    )
+    BAROBILL_CORP_NUM: Optional[str] = (
+        None  # 파트너 사업자번호 (하이픈 없이, 회원가입 시 바로빌 연동에 필요)
+    )
+    BAROBILL_USE_TEST_SERVER: bool = (
+        False  # 테스트 서버 사용 여부 (운영: false, 테스트: true)
+    )
 
     @property
     def database_url(self) -> str:
