@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 from typing import Optional
 
@@ -42,15 +42,15 @@ class Settings(BaseSettings):
         """
         return self.DATABASE_URL
 
-    model_config = {
+    model_config = SettingsConfigDict(
         # 로컬 개발용 (.env)
         # Cloud Run에서는 무시됨
-        "env_file": Path(__file__).resolve().parents[2] / ".env",
-        "env_file_encoding": "utf-8",
-        "env_ignore_empty": True,
-        "extra": "ignore",
-        "populate_by_name": True,  # 추가: 환경변수 이름 매칭 개선
-    }
+        env_file=Path(__file__).resolve().parents[2] / ".env",
+        env_file_encoding="utf-8",
+        env_ignore_empty=True,
+        extra="ignore",
+        populate_by_name=True,  # 환경변수 이름 매칭 개선
+    )
 
 
 settings = Settings()
