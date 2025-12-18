@@ -1,4 +1,5 @@
 import axios from "./axiosInstance";
+import { formatError } from "../utils/errorHelpers";
 
 export interface AutoLinkRequest {
   company_id: number;
@@ -106,7 +107,7 @@ export const fetchCertificateStatus = async (): Promise<CertificateStatusRespons
     return {
       certificate_registered: false,
       expire_date: null,
-      message: error.response?.data?.detail || error.message || "인증서 상태를 확인할 수 없습니다."
+      message: formatError(error) || "인증서 상태를 확인할 수 없습니다."
     };
   }
 };

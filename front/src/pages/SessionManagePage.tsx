@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import axiosInstance from '../api/axiosInstance'
+import { formatError } from '../utils/errorHelpers'
 
 // 기기 정보 인터페이스
 interface Device {
@@ -36,7 +37,7 @@ const SessionManagePage: React.FC = () => {
           console.error('서버 오류:', errorMessage)
           alert(`서버 오류: ${errorMessage}`)
         } else {
-          const errorMessage = error.response?.data?.detail || error.message || '기기 목록을 불러오는 중 오류가 발생했습니다.'
+          const errorMessage = formatError(error) || '기기 목록을 불러오는 중 오류가 발생했습니다.'
           alert(errorMessage)
         }
         setDeviceList([])

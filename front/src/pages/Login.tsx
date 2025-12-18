@@ -115,9 +115,8 @@ export const Login: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full h-14 bg-blue-600 dark:bg-blue-500 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors ${
-                isLoading ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`w-full h-14 bg-blue-600 dark:bg-blue-500 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
               {isLoading ? '로그인 중...' : '로그인'}
             </button>

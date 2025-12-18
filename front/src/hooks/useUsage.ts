@@ -28,13 +28,13 @@ export const useUsageLogs = (page: number = 1, limit: number = 50) => {
         params: { page, limit }
       })
       const newLogs = res.data
-      
+
       if (page === 1) {
         setLogs(newLogs)
       } else {
         setLogs(prev => [...prev, ...newLogs])
       }
-      
+
       setHasMore(newLogs.length === limit)
       setError(null)
     } catch (err: any) {

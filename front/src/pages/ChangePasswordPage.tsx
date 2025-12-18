@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { changePassword } from '../api/authApi'
+import { formatError } from '../utils/errorHelpers'
 
 const ChangePasswordPage: React.FC = () => {
   const navigate = useNavigate()
@@ -117,9 +118,9 @@ const ChangePasswordPage: React.FC = () => {
       
       // API 에러 처리
       if (error.response?.status === 401) {
-        setErrors({ currentPassword: error.response?.data?.detail || '현재 비밀번호가 올바르지 않습니다.' })
+        setErrors({ currentPassword: formatError(error) || '현재 비밀번호가 올바르지 않습니다.' })
       } else if (error.response?.status === 400) {
-        const errorMessage = error.response?.data?.detail || '비밀번호 변경 중 오류가 발생했습니다.'
+        const errorMessage = formatError(error) || '비밀번호 변경 중 오류가 발생했습니다.'
         if (errorMessage.includes('8자')) {
           setErrors({ newPassword: errorMessage })
         } else if (errorMessage.includes('동일한')) {

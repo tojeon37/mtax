@@ -69,7 +69,7 @@ export const useInvoiceIssue = () => {
       alert('세금계산서가 발행되었습니다!')
       resetInvoice()
       setExpandedItemId(null)
-      
+
       return { success: true }
     } catch (error: any) {
       const errorMessage = formatError(error) || '세금계산서 발행에 실패했습니다.'

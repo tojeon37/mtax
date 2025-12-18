@@ -30,7 +30,7 @@ export const Signup: React.FC = () => {
       agreePrivacy: false,
     },
   })
-  
+
   // 체크박스 상태 관리
   const agreeTerms = form.watch('agreeTerms')
   const agreePrivacy = form.watch('agreePrivacy')
@@ -178,172 +178,171 @@ export const Signup: React.FC = () => {
             className="space-y-4"
             autoComplete="off"
           >
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  아이디 <span className="text-red-500 dark:text-red-400">*</span>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                아이디 <span className="text-red-500 dark:text-red-400">*</span>
+              </label>
+              <input
+                {...form.register('username', {
+                  required: '아이디를 입력해주세요',
+                  minLength: {
+                    value: 3,
+                    message: '아이디는 최소 3자 이상이어야 합니다',
+                  },
+                  pattern: {
+                    value: /^[a-zA-Z0-9]+$/,
+                    message: '아이디는 영문과 숫자만 사용할 수 있습니다',
+                  },
+                  onChange: (e) => {
+                    const value = e.target.value
+                    form.setValue('username', value)
+                    debouncedCheckUsername(value)
+                  },
+                })}
+                name="username"
+                type="text"
+                autoComplete="username"
+                className="w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                placeholder="영문/숫자 조합 3자 이상"
+                disabled={isLoading}
+              />
+              {/* 고정 높이로 레이아웃 시프트 방지 */}
+              <div className="mt-1 min-h-[20px]">
+                {usernameCheckLoading && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">확인 중...</p>
+                )}
+                {!usernameCheckLoading && usernameAvailable === true && (
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    사용 가능한 아이디입니다
+                  </p>
+                )}
+                {!usernameCheckLoading && form.formState.errors.username && (
+                  <p className="text-sm text-red-500 dark:text-red-400">
+                    {form.formState.errors.username.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                비밀번호 <span className="text-red-500 dark:text-red-400">*</span>
+              </label>
+              <input
+                {...form.register('password', {
+                  required: '비밀번호를 입력해주세요',
+                  minLength: {
+                    value: 6,
+                    message: '비밀번호는 최소 6자 이상이어야 합니다',
+                  },
+                })}
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                className="w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                placeholder="6자 이상"
+                disabled={isLoading}
+              />
+              {form.formState.errors.password && (
+                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                  {form.formState.errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                비밀번호 확인 <span className="text-red-500 dark:text-red-400">*</span>
+              </label>
+              <input
+                {...form.register('passwordConfirm', {
+                  required: '비밀번호 확인을 입력해주세요',
+                  validate: (value) =>
+                    value === form.watch('password') ||
+                    '비밀번호가 일치하지 않습니다',
+                })}
+                name="passwordConfirm"
+                type="password"
+                autoComplete="new-password"
+                className="w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                placeholder="비밀번호를 다시 입력하세요"
+                disabled={isLoading}
+              />
+              {form.formState.errors.passwordConfirm && (
+                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                  {form.formState.errors.passwordConfirm.message}
+                </p>
+              )}
+            </div>
+
+            {/* 이용약관 및 개인정보처리방침 동의 */}
+            <div className="space-y-3 mt-4">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    {...form.register('agreeTerms', {
+                      required: '이용약관에 동의해주세요',
+                    })}
+                    type="checkbox"
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    disabled={isLoading}
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    이용약관에 동의합니다 <span className="text-red-500 dark:text-red-400">*</span>
+                  </span>
                 </label>
-                <input
-                  {...form.register('username', {
-                    required: '아이디를 입력해주세요',
-                    minLength: {
-                      value: 3,
-                      message: '아이디는 최소 3자 이상이어야 합니다',
-                    },
-                    pattern: {
-                      value: /^[a-zA-Z0-9]+$/,
-                      message: '아이디는 영문과 숫자만 사용할 수 있습니다',
-                    },
-                    onChange: (e) => {
-                      const value = e.target.value
-                      form.setValue('username', value)
-                      debouncedCheckUsername(value)
-                    },
-                  })}
-                  name="username"
-                  type="text"
-                  autoComplete="username"
-                  className="w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  placeholder="영문/숫자 조합 3자 이상"
-                  disabled={isLoading}
-                />
-                {/* 고정 높이로 레이아웃 시프트 방지 */}
-                <div className="mt-1 min-h-[20px]">
-                  {usernameCheckLoading && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">확인 중...</p>
-                  )}
-                  {!usernameCheckLoading && usernameAvailable === true && (
-                    <p className="text-sm text-green-600 dark:text-green-400">
-                      사용 가능한 아이디입니다
-                    </p>
-                  )}
-                  {!usernameCheckLoading && form.formState.errors.username && (
-                    <p className="text-sm text-red-500 dark:text-red-400">
-                      {form.formState.errors.username.message}
-                    </p>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => window.open('/docs/terms.html', '_blank')}
+                  className="text-blue-600 dark:text-blue-400 underline text-sm hover:text-blue-700 dark:hover:text-blue-300"
+                >
+                  보기
+                </button>
               </div>
+              {form.formState.errors.agreeTerms && (
+                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                  {form.formState.errors.agreeTerms.message}
+                </p>
+              )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  비밀번호 <span className="text-red-500 dark:text-red-400">*</span>
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    {...form.register('agreePrivacy', {
+                      required: '개인정보처리방침에 동의해주세요',
+                    })}
+                    type="checkbox"
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    disabled={isLoading}
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    개인정보처리방침에 동의합니다 <span className="text-red-500 dark:text-red-400">*</span>
+                  </span>
                 </label>
-                <input
-                  {...form.register('password', {
-                    required: '비밀번호를 입력해주세요',
-                    minLength: {
-                      value: 6,
-                      message: '비밀번호는 최소 6자 이상이어야 합니다',
-                    },
-                  })}
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  className="w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  placeholder="6자 이상"
-                  disabled={isLoading}
-                />
-                {form.formState.errors.password && (
-                  <p className="mt-1 text-sm text-red-500 dark:text-red-400">
-                    {form.formState.errors.password.message}
-                  </p>
-                )}
+                <button
+                  type="button"
+                  onClick={() => window.open('/docs/privacy.html', '_blank')}
+                  className="text-blue-600 dark:text-blue-400 underline text-sm hover:text-blue-700 dark:hover:text-blue-300"
+                >
+                  보기
+                </button>
               </div>
+              {form.formState.errors.agreePrivacy && (
+                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                  {form.formState.errors.agreePrivacy.message}
+                </p>
+              )}
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  비밀번호 확인 <span className="text-red-500 dark:text-red-400">*</span>
-                </label>
-                <input
-                  {...form.register('passwordConfirm', {
-                    required: '비밀번호 확인을 입력해주세요',
-                    validate: (value) =>
-                      value === form.watch('password') ||
-                      '비밀번호가 일치하지 않습니다',
-                  })}
-                  name="passwordConfirm"
-                  type="password"
-                  autoComplete="new-password"
-                  className="w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  placeholder="비밀번호를 다시 입력하세요"
-                  disabled={isLoading}
-                />
-                {form.formState.errors.passwordConfirm && (
-                  <p className="mt-1 text-sm text-red-500 dark:text-red-400">
-                    {form.formState.errors.passwordConfirm.message}
-                  </p>
-                )}
-              </div>
-
-              {/* 이용약관 및 개인정보처리방침 동의 */}
-              <div className="space-y-3 mt-4">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      {...form.register('agreeTerms', {
-                        required: '이용약관에 동의해주세요',
-                      })}
-                      type="checkbox"
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      disabled={isLoading}
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      이용약관에 동의합니다 <span className="text-red-500 dark:text-red-400">*</span>
-                    </span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => window.open('/docs/terms.html', '_blank')}
-                    className="text-blue-600 dark:text-blue-400 underline text-sm hover:text-blue-700 dark:hover:text-blue-300"
-                  >
-                    보기
-                  </button>
-                </div>
-                {form.formState.errors.agreeTerms && (
-                  <p className="mt-1 text-sm text-red-500 dark:text-red-400">
-                    {form.formState.errors.agreeTerms.message}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      {...form.register('agreePrivacy', {
-                        required: '개인정보처리방침에 동의해주세요',
-                      })}
-                      type="checkbox"
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      disabled={isLoading}
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      개인정보처리방침에 동의합니다 <span className="text-red-500 dark:text-red-400">*</span>
-                    </span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => window.open('/docs/privacy.html', '_blank')}
-                    className="text-blue-600 dark:text-blue-400 underline text-sm hover:text-blue-700 dark:hover:text-blue-300"
-                  >
-                    보기
-                  </button>
-                </div>
-                {form.formState.errors.agreePrivacy && (
-                  <p className="mt-1 text-sm text-red-500 dark:text-red-400">
-                    {form.formState.errors.agreePrivacy.message}
-                  </p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading || !isAllChecked}
-                className={`w-full h-14 bg-blue-600 dark:bg-blue-500 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors ${
-                  isLoading || !isAllChecked ? 'opacity-50 cursor-not-allowed' : ''
+            <button
+              type="submit"
+              disabled={isLoading || !isAllChecked}
+              className={`w-full h-14 bg-blue-600 dark:bg-blue-500 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors ${isLoading || !isAllChecked ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
-              >
-                {isLoading ? '가입 중...' : '회원가입'}
-              </button>
-            </form>
+            >
+              {isLoading ? '가입 중...' : '회원가입'}
+            </button>
+          </form>
 
           <div className="mt-4 text-center">
             <Link

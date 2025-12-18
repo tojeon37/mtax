@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { Card } from '../components/ui/Card'
 import { getInvoiceHistory, cancelTaxInvoice, cancelTaxInvoiceByInvoiceId, deleteInvoice, checkInvoiceStatus, InvoiceResponse } from '../api/invoiceApi'
 import { useAuth } from '../hooks/useAuth'
+import { formatError } from '../utils/errorHelpers'
 
 export const History: React.FC = () => {
   const [invoices, setInvoices] = useState<InvoiceResponse[]>([])
@@ -27,7 +28,7 @@ export const History: React.FC = () => {
         setInvoices(data)
       } catch (err: any) {
         console.error('발행내역 로드 실패:', err)
-        setError(err.response?.data?.detail || err.message || '발행내역을 불러오는데 실패했습니다.')
+        setError(formatError(err) || '발행내역을 불러오는데 실패했습니다.')
       } finally {
         setIsLoading(false)
       }
@@ -151,7 +152,7 @@ export const History: React.FC = () => {
       }
     } catch (err: any) {
       console.error('취소 실패:', err)
-      alert(err.response?.data?.detail || err.message || '취소 중 오류가 발생했습니다.')
+      alert(formatError(err) || '취소 중 오류가 발생했습니다.')
     } finally {
       setCancellingIds(prev => {
         const newSet = new Set(prev)
@@ -193,7 +194,7 @@ export const History: React.FC = () => {
       }
     } catch (err: any) {
       console.error('삭제 실패:', err)
-      alert(err.response?.data?.detail || err.message || '삭제 중 오류가 발생했습니다.')
+      alert(formatError(err) || '삭제 중 오류가 발생했습니다.')
     } finally {
       setDeletingIds(prev => {
         const newSet = new Set(prev)

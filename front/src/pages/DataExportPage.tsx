@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { createClient, getClients } from '../api/clientApi'
+import { formatError } from '../utils/errorHelpers'
 
 // 거래처 데이터 인터페이스
 interface ClientData {
@@ -185,7 +186,7 @@ const DataExportPage: React.FC = () => {
       alert(`총 ${clients.length}건의 거래처 리스트가 다운로드되었습니다.`)
     } catch (error: any) {
       console.error('CSV 다운로드 실패:', error)
-      const errorMessage = error.response?.data?.detail || error.message || '알 수 없는 오류'
+      const errorMessage = formatError(error) || '알 수 없는 오류'
       alert(`데이터 다운로드 중 오류가 발생했습니다: ${errorMessage}`)
     } finally {
       setIsExporting(false)

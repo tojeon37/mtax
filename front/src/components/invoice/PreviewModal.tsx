@@ -6,6 +6,7 @@ import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { checkCorpState, getCorpStateHistory } from '../../api/barobillApi'
 import { useAuth } from '../../hooks/useAuth'
+import { formatError } from '../../utils/errorHelpers'
 
 interface PreviewModalProps {
   isOpen: boolean
@@ -156,7 +157,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
         throw new Error(result.message || '조회 실패')
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || '사업자 상태 조회 중 오류가 발생했습니다.'
+      const errorMessage = formatError(error) || '사업자 상태 조회 중 오류가 발생했습니다.'
       alert(`오류: ${errorMessage}`)
       setCorpStateResult(null)
     } finally {
