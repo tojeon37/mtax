@@ -49,6 +49,7 @@ class Settings(BaseSettings):
         "env_file_encoding": "utf-8",
         "env_ignore_empty": True,
         "extra": "ignore",
+        "populate_by_name": True,  # 추가: 환경변수 이름 매칭 개선
     }
 
 
