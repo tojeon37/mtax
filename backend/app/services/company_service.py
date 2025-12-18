@@ -49,7 +49,7 @@ class CompanyService:
                 return False, None
 
             result = barobill_service.check_corp_is_member(corp_num_clean)
-            
+
             if result == 1:  # 회원
                 return True, None
             elif result == 0:  # 비회원
@@ -91,10 +91,10 @@ class CompanyService:
             is_member, check_error = CompanyService.check_barobill_member_exists(
                 barobill_service, corp_num_clean
             )
-            
+
             if check_error:
                 return False, check_error
-            
+
             if is_member:
                 # 이미 회원인 경우 - 회원 정보 업데이트 시도
                 try:
@@ -111,7 +111,7 @@ class CompanyService:
                         addr1=user_data.get("address") or "",
                         addr2="",
                     )
-                    
+
                     # 사용자 정보 업데이트
                     barobill_service.update_user_info(
                         corp_num=corp_num_clean,
@@ -124,7 +124,7 @@ class CompanyService:
                         email=user_data["email"],
                         grade="",
                     )
-                    
+
                     # 비밀번호도 업데이트 시도 (실패해도 계속 진행)
                     try:
                         barobill_service.update_user_password(
@@ -133,7 +133,7 @@ class CompanyService:
                         )
                     except Exception:
                         pass  # 비밀번호 업데이트 실패해도 계속 진행
-                    
+
                     return True, None  # 업데이트 성공
                 except Exception as e:
                     error_msg = str(e)

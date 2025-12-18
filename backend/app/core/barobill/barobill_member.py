@@ -1,6 +1,7 @@
 """
 바로빌 회원 관리 관련 API 서비스
 """
+
 from typing import Optional
 import logging
 from app.core.barobill.barobill_client import BaroBillService
@@ -234,7 +235,7 @@ class BaroBillMemberService(BaroBillService):
         """
         try:
             corp_num_clean = corp_num.replace("-", "")
-            
+
             result = self.client.get_common_client().service.UpdateCorpInfo(
                 CERTKEY=self.client.cert_key,
                 CorpNum=corp_num_clean,
@@ -288,7 +289,7 @@ class BaroBillMemberService(BaroBillService):
         """
         try:
             corp_num_clean = corp_num.replace("-", "")
-            
+
             # 전화번호 형식 정리
             tel_clean = None
             if tel:
@@ -326,4 +327,3 @@ class BaroBillMemberService(BaroBillService):
             }
         except Exception as e:
             raise
-

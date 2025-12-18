@@ -856,7 +856,9 @@ def update_current_user_info(
         if barobill_update_success:
             message += " 바로빌 정보도 함께 업데이트되었습니다."
         elif barobill_error:
-            message += f" 다만 바로빌 정보 업데이트 중 오류가 발생했습니다: {barobill_error}"
+            message += (
+                f" 다만 바로빌 정보 업데이트 중 오류가 발생했습니다: {barobill_error}"
+            )
 
         # UserResponse 스키마에 맞게 데이터 구성
         return UserResponse(
