@@ -134,7 +134,7 @@ const BillingDashboard: React.FC = () => {
           <div className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg mb-4">
             <p className="text-sm text-green-800 dark:text-green-200 leading-relaxed">
               무료 제공: 계산서 <b>{quota.free_invoice_left}건</b> 남음
-              {quota.free_invoice_left > 0 && <span className="text-green-600 dark:text-green-300"> (상태조회 무료 제공 기간)</span>}
+              {quota.free_invoice_left > 0 && <span className="text-green-600 dark:text-green-300"> (상태조회는 기간내 무료제공)</span>}
             </p>
           </div>
         )}
