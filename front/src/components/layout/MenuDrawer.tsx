@@ -2,6 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
+import { useCompanyStore } from '../../store/useCompanyStore'
 
 interface MenuDrawerProps {
   isOpen: boolean
@@ -12,6 +13,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate()
   const { isAuthenticated, logout, user } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const { currentCompany } = useCompanyStore()
 
   const handleNavigate = (path: string) => {
     navigate(path)
@@ -59,7 +61,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose }) => {
             <div className="px-4 py-2">
               {isAuthenticated && (
                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                  {user?.biz_name || user?.barobill_id || '사용자'}
+                  {currentCompany?.name || user?.barobill_id || '사용자'}
                 </p>
               )}
               {/* 다크모드 토글 */}

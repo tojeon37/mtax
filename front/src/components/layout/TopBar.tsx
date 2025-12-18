@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MenuDrawer } from './MenuDrawer'
 import { useAuth } from '../../hooks/useAuth'
+import { useCompanyStore } from '../../store/useCompanyStore'
 
 export const TopBar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -39,7 +40,7 @@ export const TopBar: React.FC = () => {
               </>
             ) : (
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate max-w-[100px]">
-                {user?.biz_name || user?.barobill_id}
+                {currentCompany?.name || user?.barobill_id}
               </span>
             )}
             <button
