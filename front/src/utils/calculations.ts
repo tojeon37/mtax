@@ -15,13 +15,14 @@ export interface InvoiceItem {
 /**
  * 품목의 공급가액과 세액 계산
  */
-export const calculateItemAmounts = (quantity: string, unitPrice: string) => {
+export const calculateItemAmounts = (quantity: string, unitPrice: string, vatRatePercent: number = 10) => {
   const qty = parseFloat(removeCommas(quantity)) || 0
   const price = parseFloat(removeCommas(unitPrice)) || 0
   const supplyValue = qty * price
-  const taxAmount = Math.floor(supplyValue * 0.1) // 부가세 10%
+  const vatRate = vatRatePercent / 100 // 부가세율을 퍼센트에서 소수로 변환
+  const taxAmount = Math.floor(supplyValue * vatRate)
   const total = supplyValue + taxAmount
-  
+
   return {
     supplyValue: supplyValue.toString(),
     taxAmount: taxAmount.toString(),

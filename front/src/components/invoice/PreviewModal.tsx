@@ -33,7 +33,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
   const { currentCompany } = useCompanyStore()
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  
+
   const [isCheckingState, setIsCheckingState] = useState(false)
   const [corpStateResult, setCorpStateResult] = useState<{
     state_name: string;
@@ -66,7 +66,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
 
   const loadCorpStateHistory = async () => {
     if (!buyer?.businessNumber) return
-    
+
     try {
       const history = await getCorpStateHistory(buyer.businessNumber)
       if (history.success && history.last_checked_at) {
@@ -112,46 +112,46 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
   }
 
   if (!isOpen) return null
-  
+
   const handleCheckCorpState = async () => {
     if (!buyer?.businessNumber) {
       alert('사업자번호가 없습니다.')
       return
     }
-    
+
     // 무료 모드 종료 및 결제수단 미등록 확인
     if (!isFreeMode && !hasPaymentMethod) {
       alert('무료 제공 5건이 모두 소진되었습니다.\n계속 이용하시려면 결제수단을 등록해주세요.')
       navigate('/billing/payment-methods')
       return
     }
-    
+
     // 확인 다이얼로그
     const confirmed = window.confirm('상태조회시 15원이 부과됩니다')
     if (!confirmed) return
-    
+
     setIsCheckingState(true)
     setCorpStateResult(null)
-    
+
     try {
       const result = await checkCorpState(buyer.businessNumber)
       if (result.success) {
         const stateName = result.state_name || result.data?.state_name || '조회 완료'
         const stateDescription = result.state_description || getStateDescription(result.data?.state || 0)
-        
+
         setCorpStateResult({
           state_name: stateName,
           state_description: stateDescription
         })
-        
+
         // 최근 조회 날짜 업데이트
         if (isAuthenticated) {
           await loadCorpStateHistory()
         }
-        
+
         // 사용자 정보 재로드 (무료 건수 업데이트)
         await loadUserInfo()
-        
+
         alert(`사업자 상태: ${stateName}\n${stateDescription}\n\n15원이 차감되었습니다.`)
       } else {
         throw new Error(result.message || '조회 실패')
@@ -260,9 +260,9 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
             {renderField(
               '결제수단',
               paymentMethod === 'cash' ? '현금' :
-              paymentMethod === 'credit' ? '외상미수금' :
-              paymentMethod === 'check' ? '수표' :
-              paymentMethod === 'bill' ? '어음' : null
+                paymentMethod === 'credit' ? '외상미수금' :
+                  paymentMethod === 'check' ? '수표' :
+                    paymentMethod === 'bill' ? '어음' : null
             )}
           </Card>
 
@@ -273,9 +273,8 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
               {items.map((item, index) => (
                 <div
                   key={item.id}
-                  className={`flex justify-between items-center py-2 ${
-                    index < items.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''
-                  }`}
+                  className={`flex justify-between items-center py-2 ${index < items.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''
+                    }`}
                 >
                   <span className="font-medium text-gray-900 dark:text-gray-100">
                     {item.name || '품목명 없음'}

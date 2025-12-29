@@ -5,24 +5,24 @@ import { formatError } from '../utils/errorHelpers'
 
 const ChangePasswordPage: React.FC = () => {
   const navigate = useNavigate()
-  
+
   // 폼 상태
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   })
-  
+
   // 에러 상태
   const [errors, setErrors] = useState<{
     currentPassword?: string
     newPassword?: string
     confirmPassword?: string
   }>({})
-  
+
   // 성공 상태
   const [isSuccess, setIsSuccess] = useState(false)
-  
+
   // 로딩 상태
   const [isLoading, setIsLoading] = useState(false)
 
@@ -53,7 +53,7 @@ const ChangePasswordPage: React.FC = () => {
   // 폼 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // 에러 초기화
     const newErrors: typeof errors = {}
 
@@ -80,8 +80,8 @@ const ChangePasswordPage: React.FC = () => {
     }
 
     // 현재 비밀번호와 새 비밀번호가 같은지 확인
-    if (formData.currentPassword && formData.newPassword && 
-        formData.currentPassword === formData.newPassword) {
+    if (formData.currentPassword && formData.newPassword &&
+      formData.currentPassword === formData.newPassword) {
       newErrors.newPassword = '현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.'
     }
 
@@ -115,7 +115,7 @@ const ChangePasswordPage: React.FC = () => {
     } catch (error: any) {
       console.error('비밀번호 변경 실패:', error)
       console.error('에러 상세:', error.response?.data)
-      
+
       // API 에러 처리
       if (error.response?.status === 401) {
         setErrors({ currentPassword: formatError(error) || '현재 비밀번호가 올바르지 않습니다.' })

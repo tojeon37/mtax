@@ -153,7 +153,7 @@ class BaroBillMemberService(BaroBillService):
             # result_code가 0 또는 -32000이면 성공으로 처리
             # -32000: 이미 가입된 연계사업자 (이미 등록된 경우도 성공으로 처리)
             OK_CODES = [0, -32000]
-            
+
             if result not in OK_CODES:  # 호출 실패
                 error_msg = self.get_err_string(result)
                 raise Exception(
@@ -166,7 +166,9 @@ class BaroBillMemberService(BaroBillService):
 
             # result_code에 따라 메시지 결정
             if result == -32000:
-                message = "이미 바로빌에 등록된 사업자입니다. 기존 정보로 연동을 계속합니다."
+                message = (
+                    "이미 바로빌에 등록된 사업자입니다. 기존 정보로 연동을 계속합니다."
+                )
             else:
                 message = "바로빌 회원사 가입이 완료되었습니다."
 

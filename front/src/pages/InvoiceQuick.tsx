@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useInvoiceStore } from '../store/invoiceStore'
 import { ItemInput } from '../components/invoice/ItemInput'
 import { SummaryBox } from '../components/invoice/SummaryBox'
@@ -42,7 +42,25 @@ export const InvoiceQuick: React.FC = () => {
 
   const [showOptionSheet, setShowOptionSheet] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  
+  const [showCustomerRing, setShowCustomerRing] = useState(true)
+
+  // 첫 번째 품목이 있으면 자동으로 펼치기
+  useEffect(() => {
+    if (items.length > 0 && !expandedItemId) {
+      setExpandedItemId(items[0].id)
+    }
+  }, [items, expandedItemId, setExpandedItemId])
+
+  // 최초 화면 진입 시 거래처 버튼에 1회만 ring 효과
+  useEffect(() => {
+    if (showCustomerRing) {
+      const timer = setTimeout(() => {
+        setShowCustomerRing(false)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [showCustomerRing])
+
   // 옵션 변경을 위한 로컬 상태
   const [localIssueDate, setLocalIssueDate] = useState(issueDate)
   const [localPaymentType, setLocalPaymentType] = useState<'receipt' | 'invoice'>(paymentType)
@@ -64,13 +82,12 @@ export const InvoiceQuick: React.FC = () => {
       <div className="max-w-[480px] mx-auto px-4 space-y-4 py-4 pt-20 pb-32">
         {/* 우리회사/거래처 선택 버튼 - 비회원도 볼 수 있음 */}
         <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* 우리회사 버튼 */}
           <button
             onClick={() => setCompanyModalOpen(true)}
-            className={`h-12 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${currentCompany
-                ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-500 dark:border-blue-400 text-blue-700 dark:text-blue-300'
-                : 'bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-500 dark:hover:border-blue-400'
-              }`}
+            className="h-12 px-4 rounded-lg font-medium flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-default"
           >
+            <span aria-hidden="true">🔒</span>
             <span>우리회사</span>
             {currentCompany && (
               <span className="text-xs truncate max-w-[100px]">
@@ -78,16 +95,24 @@ export const InvoiceQuick: React.FC = () => {
               </span>
             )}
           </button>
+
+          {/* 거래처 버튼 */}
           <button
             onClick={() => setCustomerModalOpen(true)}
-            className={`h-12 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${buyer
-                ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-500 dark:border-blue-400 text-blue-700 dark:text-blue-300'
-                : 'bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-500 dark:hover:border-blue-400'
+            className={`h-12 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 relative ${buyer
+                ? 'bg-blue-500 dark:bg-blue-600 text-white shadow-md hover:shadow-lg'
+                : `bg-blue-500 dark:bg-blue-600 text-white shadow-md hover:shadow-lg ${showCustomerRing ? 'ring-2 ring-blue-300 dark:ring-blue-400' : ''}`
               }`}
           >
+            {!buyer && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+            )}
+            {buyer && (
+              <span className="absolute top-1 right-1 text-white text-sm font-bold" aria-hidden="true">✓</span>
+            )}
             <span>거래처</span>
             {buyer && (
-              <span className="text-xs truncate max-w-[100px]">
+              <span className="text-xs truncate max-w-[100px] text-white">
                 {buyer.name}
               </span>
             )}
@@ -145,8 +170,8 @@ export const InvoiceQuick: React.FC = () => {
         >
           옵션: {issueDate} · {paymentType === 'receipt' ? '영수' : '청구'} · {
             paymentMethod === 'cash' ? '현금' :
-            paymentMethod === 'credit' ? '외상미수금' :
-            paymentMethod === 'check' ? '수표' : '어음'
+              paymentMethod === 'credit' ? '외상미수금' :
+                paymentMethod === 'check' ? '수표' : '어음'
           }
         </div>
 
@@ -155,11 +180,10 @@ export const InvoiceQuick: React.FC = () => {
           <button
             onClick={handlePreview}
             disabled={!isFormValid()}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              isFormValid()
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
-                : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${isFormValid()
+              ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+              : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+              }`}
           >
             미리보기
           </button>
@@ -174,8 +198,8 @@ export const InvoiceQuick: React.FC = () => {
             onClick={handleIssueWithPreview}
             disabled={!isFormValid() || isIssuing}
             className={`w-full h-14 rounded-xl font-semibold text-lg transition-colors ${isFormValid() && !isIssuing
-                ? 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600'
-                : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              ? 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600'
+              : 'bg-gray-300 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
               }`}
           >
             {isIssuing ? '발행 중...' : '바로 발행'}
@@ -185,11 +209,11 @@ export const InvoiceQuick: React.FC = () => {
 
       {/* 옵션 변경 bottom sheet 모달 */}
       {showOptionSheet && (
-        <div 
-          className="fixed inset-0 bg-black/40 z-40" 
+        <div
+          className="fixed inset-0 bg-black/40 z-40"
           onClick={() => setShowOptionSheet(false)}
         >
-          <div 
+          <div
             className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-2xl p-6 shadow-xl z-50 max-w-[480px] mx-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -215,22 +239,20 @@ export const InvoiceQuick: React.FC = () => {
             <div className="mb-4">
               <label className="text-sm text-gray-700 dark:text-gray-300 mb-1 block">종류</label>
               <div className="flex gap-3 mt-1">
-                <button 
-                  className={`flex-1 h-12 rounded-lg border-2 transition-colors font-medium ${
-                    localPaymentType === 'receipt'
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
+                <button
+                  className={`flex-1 h-12 rounded-lg border-2 transition-colors font-medium ${localPaymentType === 'receipt'
+                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
                   onClick={() => setLocalPaymentType('receipt')}
                 >
                   영수
                 </button>
-                <button 
-                  className={`flex-1 h-12 rounded-lg border-2 transition-colors font-medium ${
-                    localPaymentType === 'invoice'
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
+                <button
+                  className={`flex-1 h-12 rounded-lg border-2 transition-colors font-medium ${localPaymentType === 'invoice'
+                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
                   onClick={() => setLocalPaymentType('invoice')}
                 >
                   청구

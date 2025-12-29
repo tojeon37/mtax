@@ -61,15 +61,19 @@ export const useBarobillInvoice = () => {
 
     const paymentData = paymentMapping[paymentMethod] || {}
 
-    const lineItems = items.map((item) => ({
-      Name: item.name || '',
-      Information: item.specification || '',
-      ChargeableUnit: item.quantity ? String(item.quantity) : '1',
-      UnitPrice: item.unitPrice ? String(Math.round(item.unitPrice)) : String(Math.round(item.supplyValue)),
-      Amount: String(Math.round(item.supplyValue)),
-      Tax: String(Math.round(item.supplyValue * 0.1)),
-      Description: item.note || '',
-    }))
+    const lineItems = items.map((item) => {
+      const vatRate = (item.vatRate ?? 10) / 100 // 부가세율을 퍼센트에서 소수로 변환
+      const itemTax = item.supplyValue * vatRate
+      return {
+        Name: item.name || '',
+        Information: item.specification || '',
+        ChargeableUnit: item.quantity ? String(item.quantity) : '1',
+        UnitPrice: item.unitPrice ? String(Math.round(item.unitPrice)) : String(Math.round(item.supplyValue)),
+        Amount: String(Math.round(item.supplyValue)),
+        Tax: String(Math.round(itemTax)),
+        Description: item.note || '',
+      }
+    })
 
     return {
       IssueDirection: 1,

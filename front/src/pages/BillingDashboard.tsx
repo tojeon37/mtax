@@ -42,28 +42,28 @@ const BillingDashboard: React.FC = () => {
   // 무료 쿼터 변경 감지 및 팝업 표시
   useEffect(() => {
     if (!quota) return
-    
+
     // 이전 상태와 비교하여 변경 감지
     if (previousQuota) {
       // 전자세금계산서 무료 제공분 소진 시 팝업 표시
       // 사업자상태조회는 전자세금계산서 무료 제공 기간 동안만 무료로 제공되므로 별도 기준 불필요
       const wasMoreThanZero = previousQuota.free_invoice_left > 0
       const isNowZero = quota.free_invoice_left === 0
-      
+
       if (wasMoreThanZero && isNowZero && quota.show_free_popup) {
         setShowFreeModal(true)
       }
     }
-    
+
     // 현재 상태를 이전 상태로 저장 (값이 실제로 변경된 경우에만)
     const currentQuota = {
       free_invoice_left: quota.free_invoice_left,
       free_status_left: quota.free_status_left
     }
-    
-    if (!previousQuota || 
-        previousQuota.free_invoice_left !== currentQuota.free_invoice_left ||
-        previousQuota.free_status_left !== currentQuota.free_status_left) {
+
+    if (!previousQuota ||
+      previousQuota.free_invoice_left !== currentQuota.free_invoice_left ||
+      previousQuota.free_status_left !== currentQuota.free_status_left) {
       setPreviousQuota(currentQuota)
     }
   }, [quota]) // previousQuota를 의존성에서 제거
@@ -79,17 +79,17 @@ const BillingDashboard: React.FC = () => {
     if (quota.free_invoice_left > 0) {
       return true
     }
-    
+
     // 무료가 모두 소진되었지만 consumed_at이 없으면 표시 (아직 소진 안됨)
     if (!quota.consumed_at) {
       return true
     }
-    
+
     // 소진 시점으로부터 1주일 경과 여부 확인
     const consumedDate = new Date(quota.consumed_at)
     const now = new Date()
     const daysSinceConsumed = Math.floor((now.getTime() - consumedDate.getTime()) / (1000 * 60 * 60 * 24))
-    
+
     // 1주일(7일) 미만이면 표시, 7일 이상이면 숨김
     return daysSinceConsumed < 7
   }
@@ -178,7 +178,7 @@ const BillingDashboard: React.FC = () => {
               <span className="text-gray-400 text-xl">→</span>
             </div>
           </button>
-          
+
           <button
             onClick={() => navigate('/billing/cycles')}
             className="w-full py-4 px-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
@@ -192,7 +192,7 @@ const BillingDashboard: React.FC = () => {
               <span className="text-gray-400 text-xl">→</span>
             </div>
           </button>
-          
+
           <button
             onClick={() => navigate('/billing/payment-methods')}
             className="w-full py-4 px-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
@@ -211,11 +211,11 @@ const BillingDashboard: React.FC = () => {
 
       {/* 무료 제공 소진 팝업 */}
       {showFreeModal && (
-        <FreeQuotaModal 
+        <FreeQuotaModal
           onClose={() => {
             setShowFreeModal(false)
             refetchQuota() // 쿼터 정보 다시 불러오기
-          }} 
+          }}
         />
       )}
     </div>

@@ -68,11 +68,11 @@ export const useCompanyForm = (company?: Company | null) => {
   const linkBarobill = async (companyId: number, password: string) => {
     try {
       const linkResult = await autoLinkBarobill(companyId, password)
-      
+
       // resultCode 확인: 0 또는 -32000이면 성공으로 처리
       const OK_CODES = [0, -32000]
       const resultCode = linkResult.resultCode
-      
+
       if (resultCode !== undefined && !OK_CODES.includes(resultCode)) {
         // resultCode가 있고 OK_CODES에 없으면 실패
         return {
@@ -80,15 +80,15 @@ export const useCompanyForm = (company?: Company | null) => {
           message: `⚠️ ${linkResult.message || '바로빌 연동 중 오류가 발생했습니다.'}\n\n회사 정보는 저장되었습니다. 나중에 다시 시도하거나 관리자에게 문의해주세요.`,
         }
       }
-      
+
       // 성공 처리 (resultCode가 없거나 OK_CODES에 포함된 경우)
       if (linkResult.success || (resultCode !== undefined && OK_CODES.includes(resultCode))) {
         let successMessage = '✅ 바로빌 연동이 완료되었습니다!\n\n동일한 아이디/비밀번호로 바로빌에도 로그인할 수 있습니다.'
-        
+
         if (resultCode === -32000) {
           successMessage = '✅ 이미 바로빌에 등록된 사업자입니다. 기존 계정으로 연동을 계속합니다.\n\n동일한 아이디/비밀번호로 바로빌에도 로그인할 수 있습니다.'
         }
-        
+
         return {
           success: true,
           message: successMessage,

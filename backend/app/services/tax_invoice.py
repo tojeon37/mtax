@@ -200,10 +200,36 @@ class TaxInvoiceService:
         )
         line_item_type = self.client.get_type("ns0:TaxInvoiceTradeLineItem")
 
+        # 전체 부가세율 확인 (API 엔드포인트에서 계산되었지만, 혹시 모를 경우를 대비)
+        vat_rate_percent = invoice_data.get("vat_rate_percent", 10.0)
+        vat_rate = vat_rate_percent / 100.0
+
         # 거래명세서 항목 생성
         line_items = []
         if "TaxInvoiceTradeLineItems" in invoice_data:
             for item_data in invoice_data["TaxInvoiceTradeLineItems"]:
+                # 공급가액 추출
+                try:
+                    supply_value = float(item_data.get("Amount", 0) or 0)
+                except (ValueError, TypeError):
+                    supply_value = 0
+
+                # VAT 금액 확인 및 계산
+                tax_value = item_data.get("Tax", "")
+                if not tax_value or tax_value == "":
+                    # Tax 필드가 비어있으면 부가세율로 계산
+                    # 품목별 부가세율이 있으면 사용, 없으면 전체 부가세율 사용
+                    item_vat_rate_percent = item_data.get("vat_rate_percent")
+                    if item_vat_rate_percent is not None:
+                        item_vat_rate = item_vat_rate_percent / 100.0
+                    else:
+                        item_vat_rate = vat_rate
+
+                    # VAT 금액 계산 (공급가액 * 부가세율)
+                    tax_amount = round(supply_value * item_vat_rate)
+                    tax_value = str(int(tax_amount))
+
+                # barobill API는 VAT 금액을 문자열로 받음
                 line_item = line_item_type(
                     PurchaseExpiry=item_data.get("PurchaseExpiry", ""),
                     Name=item_data.get("Name", ""),
@@ -211,7 +237,7 @@ class TaxInvoiceService:
                     ChargeableUnit=item_data.get("ChargeableUnit", ""),
                     UnitPrice=item_data.get("UnitPrice", ""),
                     Amount=item_data.get("Amount", ""),
-                    Tax=item_data.get("Tax", ""),
+                    Tax=tax_value,  # 계산된 VAT 금액 전달
                     Description=item_data.get("Description", ""),
                 )
                 line_items.append(line_item)

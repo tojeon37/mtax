@@ -20,6 +20,7 @@ interface ItemFormData {
   quantity: number
   unitPrice: number
   supplyValue: number
+  vatRate: number
   note: string
 }
 
@@ -57,7 +58,7 @@ export const ItemInput: React.FC<ItemInputProps> = ({
   const [supplyValueDisplay, setSupplyValueDisplay] = useState(
     item.supplyValue ? formatNumber(item.supplyValue.toString()) : ''
   )
-  
+
   // 공급가액 하이라이트 상태
   const [highlightAmount, setHighlightAmount] = useState(false)
 
@@ -83,15 +84,15 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     setQuantityDisplay(displayFormatted)
     const numValue = Number(removeCommas(formatted) || 0)
     setValue('quantity', numValue)
-    
+
     // 공급가액 자동 계산
     const currentUnitPrice = Number(removeCommas(unitPriceDisplay) || 0)
     const calculatedSupply = calculateSupplyValue(numValue, currentUnitPrice)
-    
+
     // 공급가액 하이라이트 효과
     setHighlightAmount(true)
     setTimeout(() => setHighlightAmount(false), 300)
-    
+
     // store 업데이트
     onUpdate({
       quantity: numValue,
@@ -107,15 +108,15 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     setUnitPriceDisplay(displayFormatted)
     const numValue = Number(removeCommas(formatted) || 0)
     setValue('unitPrice', numValue)
-    
+
     // 공급가액 자동 계산
     const currentQuantity = Number(removeCommas(quantityDisplay) || 0)
     const calculatedSupply = calculateSupplyValue(currentQuantity, numValue)
-    
+
     // 공급가액 하이라이트 효과
     setHighlightAmount(true)
     setTimeout(() => setHighlightAmount(false), 300)
-    
+
     // store 업데이트
     onUpdate({
       quantity: currentQuantity,
@@ -145,6 +146,20 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     onUpdate({ specification })
   }
 
+  // 부가세율 변경 시
+  const handleVatRateChange = (vatRate: number) => {
+    // 유효성 검증: 0 미만이면 0, 10 초과면 10으로 제한
+    let validatedRate = vatRate
+    if (isNaN(validatedRate) || validatedRate < 0) {
+      validatedRate = 0
+    } else if (validatedRate > 10) {
+      validatedRate = 10
+    }
+
+    setValue('vatRate', validatedRate)
+    onUpdate({ vatRate: validatedRate })
+  }
+
   // 비고 변경 시
   const handleNoteChange = (note: string) => {
     setValue('note', note)
@@ -156,23 +171,25 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     const selectedQuantity = selectedItem.quantity || item.quantity || 1
     const selectedUnitPrice = selectedItem.unitPrice || 0
     const calculatedSupply = selectedQuantity * selectedUnitPrice
-    
+
     setValue('name', selectedItem.name)
     setValue('specification', selectedItem.specification || '')
     setValue('quantity', selectedQuantity)
     setValue('unitPrice', selectedUnitPrice)
     setValue('supplyValue', calculatedSupply)
-    
+    setValue('vatRate', selectedItem.vatRate ?? 10)
+
     setQuantityDisplay(selectedQuantity > 0 ? formatNumber(selectedQuantity.toString()) : '')
     setUnitPriceDisplay(selectedUnitPrice > 0 ? formatNumber(selectedUnitPrice.toString()) : '')
     setSupplyValueDisplay(calculatedSupply > 0 ? formatNumber(calculatedSupply.toString()) : '')
-    
+
     onUpdate({
       name: selectedItem.name,
       specification: selectedItem.specification ?? '',
       unitPrice: selectedUnitPrice,
       quantity: selectedQuantity,
       supplyValue: calculatedSupply,
+      vatRate: selectedItem.vatRate ?? 10,
     })
   }
 
@@ -181,7 +198,7 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     const currentQuantity = Number(removeCommas(quantityDisplay) || 0)
     const currentUnitPrice = Number(removeCommas(unitPriceDisplay) || 0)
     const currentSupplyValue = Number(removeCommas(supplyValueDisplay) || 0)
-    
+
     // 외부에서 변경된 경우에만 업데이트 (사용자 입력과 충돌 방지)
     if (item.quantity !== undefined && Math.abs(item.quantity - currentQuantity) > 0.01) {
       setQuantityDisplay(item.quantity > 0 ? formatNumber(item.quantity.toString()) : '')
@@ -215,7 +232,7 @@ export const ItemInput: React.FC<ItemInputProps> = ({
         supplyValue: item.supplyValue,
         note: item.note,
       }
-      
+
       // 디바운스: 3초 후에 저장 (사용자가 계속 입력 중이면 저장하지 않음)
       const timer = setTimeout(() => {
         saveRecentItem(itemToSave)
@@ -229,7 +246,7 @@ export const ItemInput: React.FC<ItemInputProps> = ({
   // 기본값: false - 모든 품목이 접힌 상태로 시작 (사용자가 클릭해야 펼쳐짐)
   const [internalOpen, setInternalOpen] = useState(false)
   const isOpen = controlledExpanded !== undefined ? controlledExpanded : internalOpen
-  
+
   // 품목 선택 모달 상태
   const [itemPickerOpen, setItemPickerOpen] = useState(false)
 
@@ -385,6 +402,93 @@ export const ItemInput: React.FC<ItemInputProps> = ({
             </div>
           </div>
 
+          {/* 부가세율 */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              부가세율(%)
+            </label>
+            <div className="relative w-full">
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                {...register('vatRate', {
+                  valueAsNumber: true,
+                  min: { value: 0, message: '0 이상의 값을 입력해주세요' },
+                  max: { value: 10, message: '10 이하의 값을 입력해주세요' }
+                })}
+                defaultValue={item.vatRate ?? 10}
+                onChange={(e) => {
+                  const inputValue = e.target.value
+                  // 빈 값일 경우 0으로 처리
+                  if (inputValue === '' || inputValue === null || inputValue === undefined) {
+                    handleVatRateChange(0)
+                    e.target.value = '0'
+                    return
+                  }
+
+                  const value = parseFloat(inputValue)
+                  // NaN이거나 음수인 경우 0으로 처리
+                  if (isNaN(value) || value < 0) {
+                    handleVatRateChange(0)
+                    e.target.value = '0'
+                    return
+                  }
+
+                  // 10 초과인 경우 10으로 제한
+                  if (value > 10) {
+                    handleVatRateChange(10)
+                    e.target.value = '10'
+                    return
+                  }
+
+                  handleVatRateChange(value)
+                }}
+                onBlur={(e) => {
+                  const inputValue = e.target.value
+                  // 빈 값일 경우 0으로 처리
+                  if (inputValue === '' || inputValue === null || inputValue === undefined) {
+                    handleVatRateChange(0)
+                    e.target.value = '0'
+                    return
+                  }
+
+                  const value = parseFloat(inputValue)
+                  // NaN이거나 음수인 경우 0으로 처리
+                  if (isNaN(value) || value < 0) {
+                    handleVatRateChange(0)
+                    e.target.value = '0'
+                    return
+                  }
+
+                  // 10 초과인 경우 10으로 제한
+                  if (value > 10) {
+                    handleVatRateChange(10)
+                    e.target.value = '10'
+                    return
+                  }
+
+                  // 정상적인 값인 경우 그대로 사용
+                  handleVatRateChange(value)
+                }}
+                className="mt-1 w-full h-12 px-4 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                placeholder="10"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">
+                %
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              간이과세자는 0~5%까지 입력 가능합니다
+            </p>
+            {errors.vatRate && (
+              <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                {errors.vatRate.message}
+              </p>
+            )}
+          </div>
+
           {/* 공급가액 */}
           <div>
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -400,9 +504,8 @@ export const ItemInput: React.FC<ItemInputProps> = ({
                   setSupplyValueDisplay(formatNumber(numValue.toString()))
                 }
               }}
-              className={`mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300 ${
-                highlightAmount ? 'bg-blue-100/30 dark:bg-blue-900/30' : ''
-              }`}
+              className={`mt-1 w-full h-12 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300 ${highlightAmount ? 'bg-blue-100/30 dark:bg-blue-900/30' : ''
+                }`}
               placeholder="(자동계산)"
             />
             {errors.supplyValue && (

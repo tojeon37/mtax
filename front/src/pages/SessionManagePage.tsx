@@ -25,7 +25,7 @@ const SessionManagePage: React.FC = () => {
         console.error('기기 목록 로드 실패:', error)
         console.error('에러 상세:', error.response?.data)
         console.error('에러 상태:', error.response?.status)
-        
+
         if (error.response?.status === 401) {
           alert('로그인이 필요합니다.')
         } else if (error.response?.status === 404) {
@@ -45,7 +45,7 @@ const SessionManagePage: React.FC = () => {
         setIsLoading(false)
       }
     }
-    
+
     fetchDevices()
   }, [])
 
@@ -87,7 +87,7 @@ const SessionManagePage: React.FC = () => {
                   return dateString
                 }
               }
-              
+
               return (
                 <div
                   key={index}
@@ -106,8 +106,8 @@ const SessionManagePage: React.FC = () => {
                     )}
                     {device.user_agent && (
                       <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        {device.user_agent.length > 50 
-                          ? `${device.user_agent.substring(0, 50)}...` 
+                        {device.user_agent.length > 50
+                          ? `${device.user_agent.substring(0, 50)}...`
                           : device.user_agent}
                       </p>
                     )}

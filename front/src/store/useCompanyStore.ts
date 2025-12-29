@@ -9,7 +9,7 @@ interface CompanyStore {
 
 export const useCompanyStore = create<CompanyStore>((set) => ({
   currentCompany: null,
-  
+
   setCurrentCompany: (company) => {
     set({ currentCompany: company })
     // localStorage에도 저장
@@ -19,14 +19,14 @@ export const useCompanyStore = create<CompanyStore>((set) => ({
       localStorage.removeItem('lastSelectedCompanyId')
     }
   },
-  
+
   loadCurrentCompany: async () => {
     try {
       const { getCompanies } = await import('../api/companyApi')
       const companies = await getCompanies()
-      
+
       console.log('[useCompanyStore] 회사 목록 로드:', companies.length, '개')
-      
+
       if (companies.length > 0) {
         // localStorage에서 저장된 회사 ID 확인
         const savedCompanyId = localStorage.getItem('lastSelectedCompanyId')
@@ -40,7 +40,7 @@ export const useCompanyStore = create<CompanyStore>((set) => ({
             return
           }
         }
-        
+
         // 저장된 ID가 없거나 유효하지 않으면 첫 번째 회사 사용
         console.log('[useCompanyStore] 첫 번째 회사 선택:', companies[0].name)
         set({ currentCompany: companies[0] })

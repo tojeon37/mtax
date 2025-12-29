@@ -7,6 +7,7 @@ export interface Item {
   quantity?: number
   unitPrice?: number
   supplyValue: number
+  vatRate?: number
   note?: string
 }
 
@@ -48,6 +49,7 @@ const createDefaultItem = (): Item => ({
   id: Date.now().toString(),
   name: '',
   supplyValue: 0,
+  vatRate: 10,
 })
 
 export const useInvoiceStore = create<InvoiceState>((set, get) => ({
@@ -75,7 +77,7 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
       let updatedItems = state.items.map((item) =>
         item.id === id ? { ...item, ...updates } : item
       )
-      
+
       // 공급가액 자동 계산 (수량 * 단가가 업데이트된 경우)
       updatedItems = updatedItems.map((item) => {
         if (item.id === id && (updates.quantity !== undefined || updates.unitPrice !== undefined)) {
@@ -86,15 +88,19 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
         return item
       })
 
-      // 전체 공급가액 재계산 (항상 수행)
+      // 전체 공급가액 및 부가세 재계산 (각 아이템의 부가세율 사용)
       const totalSupply = updatedItems.reduce((sum, item) => sum + (item.supplyValue || 0), 0)
-      const tax = totalSupply * 0.1
-      const total = totalSupply + tax
+      const totalTax = updatedItems.reduce((sum, item) => {
+        const supplyValue = item.supplyValue || 0
+        const vatRate = (item.vatRate ?? 10) / 100 // 부가세율을 퍼센트에서 소수로 변환
+        return sum + (supplyValue * vatRate)
+      }, 0)
+      const total = totalSupply + totalTax
 
       return {
         items: updatedItems,
         supplyValue: totalSupply,
-        taxAmount: tax,
+        taxAmount: totalTax,
         totalAmount: total,
       }
     }),
@@ -105,15 +111,19 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
       if (newItems.length === 0) {
         newItems.push(createDefaultItem())
       }
-      
+
       const totalSupply = newItems.reduce((sum, item) => sum + item.supplyValue, 0)
-      const tax = totalSupply * 0.1
-      const total = totalSupply + tax
+      const totalTax = newItems.reduce((sum, item) => {
+        const supplyValue = item.supplyValue || 0
+        const vatRate = (item.vatRate ?? 10) / 100 // 부가세율을 퍼센트에서 소수로 변환
+        return sum + (supplyValue * vatRate)
+      }, 0)
+      const total = totalSupply + totalTax
 
       return {
         items: newItems,
         supplyValue: totalSupply,
-        taxAmount: tax,
+        taxAmount: totalTax,
         totalAmount: total,
       }
     }),
@@ -146,9 +156,13 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
   calculateTotals: () => {
     const state = get()
     const totalSupply = state.items.reduce((sum, item) => sum + item.supplyValue, 0)
-    const tax = totalSupply * 0.1
-    const total = totalSupply + tax
-    set({ supplyValue: totalSupply, taxAmount: tax, totalAmount: total })
+    const totalTax = state.items.reduce((sum, item) => {
+      const supplyValue = item.supplyValue || 0
+      const vatRate = (item.vatRate ?? 10) / 100 // 부가세율을 퍼센트에서 소수로 변환
+      return sum + (supplyValue * vatRate)
+    }, 0)
+    const total = totalSupply + totalTax
+    set({ supplyValue: totalSupply, taxAmount: totalTax, totalAmount: total })
   },
 }))
 

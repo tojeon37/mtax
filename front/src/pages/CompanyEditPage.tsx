@@ -81,7 +81,7 @@ const CompanyEditPage: React.FC = () => {
 
     try {
       setLoading(true)
-      
+
       // 상세주소를 주소 뒤에 붙여서 전송
       const submitData: any = {
         businessNumber: form.businessNumber.trim(),
@@ -89,7 +89,7 @@ const CompanyEditPage: React.FC = () => {
         ceoName: form.ceoName.trim(),
         bizType: form.bizType.trim(),
         bizClass: form.bizClass.trim(),
-        address: form.addressDetail 
+        address: form.addressDetail
           ? `${form.address} ${form.addressDetail}`.trim()
           : form.address.trim(),
         email: form.email.trim(),
@@ -102,10 +102,10 @@ const CompanyEditPage: React.FC = () => {
 
       // addressDetail은 주소에 포함되었으므로 포함하지 않음 (백엔드에서 Optional이므로 undefined로 처리)
       // undefined는 JSON 직렬화 시 제외되므로 백엔드에서 None으로 처리됨
-      
+
       console.log('저장할 데이터:', submitData)
       console.log('isNew:', isNew, 'id:', id, 'location.pathname:', location.pathname)
-      
+
       if (isNew) {
         // 새로 등록
         await createCompany(submitData)
@@ -119,10 +119,10 @@ const CompanyEditPage: React.FC = () => {
         console.error('예상치 못한 상황:', { isNew, id, pathname: location.pathname })
         throw new Error('저장할 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.')
       }
-      
+
       // 저장 후 회사 정보 다시 로드 (상단 메뉴바 업데이트를 위해)
       await loadCurrentCompany()
-      
+
       // 저장 후 목록 페이지로 이동 (목록이 자동으로 다시 불러와짐)
       navigate('/company', { replace: true })
     } catch (e: any) {

@@ -26,7 +26,9 @@ class AutoLinkResponse(BaseModel):
 
     success: bool
     message: str
-    resultCode: Optional[int] = None  # 바로빌 API 응답 코드 (0: 성공, -32000: 이미 가입된 사업자)
+    resultCode: Optional[int] = (
+        None  # 바로빌 API 응답 코드 (0: 성공, -32000: 이미 가입된 사업자)
+    )
 
 
 class CertificateCheckRequest(BaseModel):
@@ -281,7 +283,9 @@ def auto_link_barobill(
                 barobill_registered = True
             else:
                 # 다른 에러 코드인 경우 실패로 처리
-                error_msg = barobill_result.get("message", f"바로빌 회원사 가입 실패 (코드: {result_code})")
+                error_msg = barobill_result.get(
+                    "message", f"바로빌 회원사 가입 실패 (코드: {result_code})"
+                )
                 return AutoLinkResponse(
                     success=False,
                     message=f"바로빌 연동 중 오류가 발생했습니다: {error_msg}. 관리자에게 문의해주세요.",

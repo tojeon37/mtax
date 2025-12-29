@@ -5,6 +5,7 @@ from decimal import Decimal
 
 class InvoicePartyBase(BaseModel):
     """거래처 기본 정보"""
+
     MgtNum: Optional[str] = None
     CorpNum: str
     TaxRegID: Optional[str] = None
@@ -22,6 +23,7 @@ class InvoicePartyBase(BaseModel):
 
 class TaxInvoiceTradeLineItem(BaseModel):
     """세금계산서 거래명세서 항목"""
+
     PurchaseExpiry: Optional[str] = None
     Name: str
     Information: Optional[str] = None
@@ -30,10 +32,14 @@ class TaxInvoiceTradeLineItem(BaseModel):
     Amount: Optional[str] = None
     Tax: Optional[str] = None
     Description: Optional[str] = None
+    vat_rate_percent: Optional[float] = (
+        None  # 품목별 부가세율 (퍼센트, 없으면 전체 부가세율 사용)
+    )
 
 
 class TaxInvoiceCreate(BaseModel):
     """세금계산서 생성 스키마"""
+
     IssueDirection: int = 1  # 1: 정발행, 2: 역발행
     TaxInvoiceType: int = 1  # 1: 세금계산서, 2: 계산서
     ModifyCode: Optional[str] = None
@@ -44,6 +50,7 @@ class TaxInvoiceCreate(BaseModel):
     AmountTotal: str
     TaxTotal: str
     TotalAmount: str
+    vat_rate_percent: Optional[float] = 10.0  # 부가세율 (퍼센트, 기본값 10%)
     Cash: Optional[str] = None
     ChkBill: Optional[str] = None
     Note: Optional[str] = None
@@ -63,6 +70,7 @@ class TaxInvoiceCreate(BaseModel):
 
 class TaxInvoiceIssue(BaseModel):
     """세금계산서 발행 스키마"""
+
     mgt_key: str
     send_sms: bool = False
     sms_message: Optional[str] = None
@@ -74,6 +82,7 @@ class TaxInvoiceIssue(BaseModel):
 
 class TaxInvoiceResponse(BaseModel):
     """세금계산서 응답 스키마"""
+
     mgt_key: Optional[str] = None
     tax_invoice_type: Optional[int] = None
     issue_direction: Optional[int] = None
@@ -83,7 +92,6 @@ class TaxInvoiceResponse(BaseModel):
     total_amount: Optional[str] = None
     invoicer_party: Optional[dict] = None
     invoicee_party: Optional[dict] = None
-    
+
     class Config:
         from_attributes = True
-

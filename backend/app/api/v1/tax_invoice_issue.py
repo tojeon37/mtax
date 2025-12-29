@@ -54,15 +54,69 @@ def issue_tax_invoice(
             )
     
     try:
+        # 부가세율 검증 및 재계산
+        vat_rate_percent = invoice.vat_rate_percent if invoice.vat_rate_percent is not None else 10.0
+        
+        # 부가세율 유효성 검증 (0 이상 10 이하)
+        if vat_rate_percent < 0 or vat_rate_percent > 10:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"부가세율은 0 이상 10 이하여야 합니다. (입력값: {vat_rate_percent}%)"
+            )
+        
+        # 부가세율을 소수로 변환 (10% -> 0.1)
+        vat_rate = vat_rate_percent / 100.0
+        
+        # 세금계산서 등록 및 발행
+        invoice_data = invoice.model_dump(exclude={'IssueTiming', 'vat_rate_percent'})
+        issue_timing = invoice.IssueTiming
+        
+        # 각 품목의 부가세 재계산
+        if invoice_data.get('TaxInvoiceTradeLineItems'):
+            total_supply = 0
+            total_tax = 0
+            
+            for item in invoice_data['TaxInvoiceTradeLineItems']:
+                # 공급가액 추출
+                try:
+                    supply_value = float(item.get('Amount', 0))
+                except (ValueError, TypeError):
+                    supply_value = 0
+                
+                # 품목별 부가세율이 있으면 사용, 없으면 전체 부가세율 사용
+                item_vat_rate_percent = item.get('vat_rate_percent')
+                if item_vat_rate_percent is not None:
+                    # 품목별 부가세율 검증
+                    if item_vat_rate_percent < 0 or item_vat_rate_percent > 10:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"품목 '{item.get('Name', '')}'의 부가세율은 0 이상 10 이하여야 합니다. (입력값: {item_vat_rate_percent}%)"
+                        )
+                    item_vat_rate = item_vat_rate_percent / 100.0
+                else:
+                    item_vat_rate = vat_rate
+                
+                # 부가세 재계산 (공급가액 * 부가세율)
+                tax_amount = round(supply_value * item_vat_rate)
+                item['Tax'] = str(int(tax_amount))
+                
+                total_supply += supply_value
+                total_tax += tax_amount
+                
+                # vat_rate_percent 필드는 barobill API에 전송하지 않도록 제거
+                if 'vat_rate_percent' in item:
+                    del item['vat_rate_percent']
+            
+            # 전체 합계 재계산
+            invoice_data['AmountTotal'] = str(int(total_supply))
+            invoice_data['TaxTotal'] = str(int(total_tax))
+            invoice_data['TotalAmount'] = str(int(total_supply + total_tax))
+        
         # 사용자별 인증키로 세금계산서 서비스 생성
         service = TaxInvoiceService(
             cert_key=current_user.barobill_cert_key,
             corp_num=current_user.barobill_corp_num
         )
-        
-        # 세금계산서 등록 및 발행
-        invoice_data = invoice.model_dump(exclude={'IssueTiming'})
-        issue_timing = invoice.IssueTiming
         
         # 등록
         mgt_key = service.regist_tax_invoice(invoice_data, issue_timing)

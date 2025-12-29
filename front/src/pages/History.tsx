@@ -133,7 +133,7 @@ export const History: React.FC = () => {
 
     try {
       let result
-      
+
       // mgt_key가 있으면 mgt_key로 취소, 없으면 invoice_id로 취소
       if (invoice.mgt_key && invoice.mgt_key !== 'null' && invoice.mgt_key !== '') {
         result = await cancelTaxInvoice(invoice.mgt_key)
@@ -141,7 +141,7 @@ export const History: React.FC = () => {
         // invoice_id로 취소 (백엔드에서 TaxInvoiceIssue에서 mgt_key 찾기)
         result = await cancelTaxInvoiceByInvoiceId(invoice.id)
       }
-      
+
       if (result.success) {
         alert(result.message || '세금계산서가 취소되었습니다.')
         // 목록 새로고침
@@ -167,7 +167,7 @@ export const History: React.FC = () => {
     // mgt_key가 없고, 상태가 "대기" 또는 "CREATED"인 경우 삭제 가능
     const hasNoMgtKey = !invoice.mgt_key || invoice.mgt_key === 'null' || invoice.mgt_key === null || invoice.mgt_key === ''
     const isWaitingStatus = invoice.status === '대기' || invoice.status === 'CREATED'
-    
+
     return hasNoMgtKey && isWaitingStatus
   }
 
@@ -210,7 +210,7 @@ export const History: React.FC = () => {
     // 하지만 mgt_key가 없으면 바로빌로 발행하지 않은 것이므로 취소 불가
     const hasMgtKey = !!(invoice.mgt_key && invoice.mgt_key !== 'null' && invoice.mgt_key !== null && invoice.mgt_key !== '')
     const isWaitingStatus = invoice.status === '대기' || invoice.status === 'CREATED'
-    
+
     // 디버깅용 로그 (개발 환경에서만)
     if (process.env.NODE_ENV === 'development') {
       console.log('canCancel check:', {
@@ -222,7 +222,7 @@ export const History: React.FC = () => {
         canCancel: hasMgtKey && isWaitingStatus
       })
     }
-    
+
     // mgt_key가 있고 "대기" 또는 "CREATED" 상태면 취소 가능
     // mgt_key가 없으면 바로빌로 발행하지 않은 것이므로 취소 불가
     return !!(hasMgtKey && isWaitingStatus)
@@ -315,7 +315,7 @@ export const History: React.FC = () => {
                     )}
                     {invoice.status === '완료' && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-left">
-                        발행이 완료된 계산서는 수정할 수 없습니다.<br/>
+                        발행이 완료된 계산서는 수정할 수 없습니다.<br />
                         수정세금계산서 발급은 홈택스에서 신청해야 합니다.
                       </p>
                     )}
