@@ -8,6 +8,15 @@ export const GuidePage: React.FC = () => {
           이용안내
         </h1>
 
+        {/* 인증서 안내 */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
+            <span className="font-semibold">인증서는</span>
+            <br />
+            사업자용인증서, 전자세금계산서용 인증서가 있어야 이용가능합니다.
+          </p>
+        </div>
+
         {/* [🔐 로그인 및 계정 이용] */}
         <section className="bg-white dark:bg-gray-800 rounded-lg p-5 shadow-sm">
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
