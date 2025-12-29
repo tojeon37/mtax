@@ -159,21 +159,6 @@ export const useBarobillInvoice = () => {
     } catch (error: any) {
       const errorMessage = formatError(error) || '세금계산서 발행 중 오류가 발생했습니다.'
 
-      // 인증서 관련 에러인 경우 특별 처리
-      if (
-        errorMessage.includes('바로빌 연동') ||
-        errorMessage.includes('인증서') ||
-        errorMessage.includes('인증키') ||
-        errorMessage.includes('cert') ||
-        error.response?.status === 400
-      ) {
-        return {
-          success: false,
-          error: errorMessage,
-          shouldNavigateToCert: true,
-        }
-      }
-
       return {
         success: false,
         error: errorMessage,

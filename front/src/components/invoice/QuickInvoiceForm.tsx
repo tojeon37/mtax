@@ -106,16 +106,7 @@ export const QuickInvoiceForm: React.FC = () => {
         alert('무료 제공 5건이 모두 소진되었습니다.\n계속 이용하시려면 결제수단을 등록해주세요.')
       }
     } else {
-      if (result.shouldNavigateToCert) {
-        const shouldGoToCert = confirm(
-          `${result.error}\n\n인증서 등록 페이지로 이동하시겠습니까?`
-        )
-        if (shouldGoToCert) {
-          navigate('/certificate')
-        }
-      } else {
-        alert(`발행 실패: ${result.error}`)
-      }
+      alert(`발행 실패: ${result.error}`)
     }
   }
 

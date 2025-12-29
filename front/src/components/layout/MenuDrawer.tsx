@@ -116,12 +116,6 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose }) => {
               거래처 업로드
             </button>
             <button
-              onClick={() => handleNavigate('/certificate')}
-              className="w-full text-left px-4 py-3 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              공동인증서
-            </button>
-            <button
               onClick={() => handleNavigate('/billing')}
               className="w-full text-left px-4 py-3 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >

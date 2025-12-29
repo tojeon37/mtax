@@ -5,9 +5,15 @@ import { SummaryBox } from '../components/invoice/SummaryBox'
 import { PreviewModal } from '../components/invoice/PreviewModal'
 import { CustomerSelectModal } from '../components/invoice/CustomerSelectModal'
 import { CompanySelectModal } from '../components/modals/CompanySelectModal'
+import { CertificateRegistrationGuideModal } from '../components/modals/CertificateRegistrationGuideModal'
+import { SecurityEnvironmentCheckModal } from '../components/modals/SecurityEnvironmentCheckModal'
+import { CertificateRegistrationSuccessModal } from '../components/modals/CertificateRegistrationSuccessModal'
+import { CertificateRegistrationModal } from '../components/modals/CertificateRegistrationModal'
 import { useQuickInvoice } from '../hooks/invoice/useQuickInvoice'
-import { useInvoiceIssue } from '../hooks/invoice/useInvoiceIssue'
+import { useBarobillInvoice } from '../hooks/invoice/useBarobillInvoice'
 import { useInvoiceValidation } from '../hooks/invoice/useInvoiceValidation'
+import { checkCertificate } from '../api/barobillApi'
+import { formatError } from '../utils/errorHelpers'
 
 export const InvoiceQuick: React.FC = () => {
   const {
@@ -37,12 +43,21 @@ export const InvoiceQuick: React.FC = () => {
     handleSelectCompany,
   } = useQuickInvoice()
 
-  const { handleIssue, isIssuing } = useInvoiceIssue()
+  const { handleIssue, isIssuing } = useBarobillInvoice()
   const { isFormValid } = useInvoiceValidation()
 
   const [showOptionSheet, setShowOptionSheet] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [showCustomerRing, setShowCustomerRing] = useState(true)
+
+  // 인증서 등록 플로우 상태
+  const [showGuideModal, setShowGuideModal] = useState(false)
+  const [showSecurityCheckModal, setShowSecurityCheckModal] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showCertificateRegistrationModal, setShowCertificateRegistrationModal] = useState(false)
+  const [needsInstallation, setNeedsInstallation] = useState(false)
+  const [certificateRegistUrl, setCertificateRegistUrl] = useState<string | null>(null)
+  const [isCheckingCertificate, setIsCheckingCertificate] = useState(false)
 
   // 첫 번째 품목이 있으면 자동으로 펼치기
   useEffect(() => {
@@ -66,10 +81,160 @@ export const InvoiceQuick: React.FC = () => {
   const [localPaymentType, setLocalPaymentType] = useState<'receipt' | 'invoice'>(paymentType)
   const [localPaymentMethod, setLocalPaymentMethod] = useState<'cash' | 'credit' | 'check' | 'bill'>(paymentMethod)
 
+  // 인증서 체크 및 발행 처리
   const handleIssueWithPreview = async () => {
-    const result = await handleIssue()
-    if (result?.success) {
-      setIsPreviewOpen(false)
+    // 기본 검증
+    if (!isFormValid()) {
+      return
+    }
+
+    // 로그인 체크
+    if (!isAuthenticated) {
+      const shouldLogin = confirm('세금계산서를 발행하려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?')
+      if (shouldLogin) {
+        // 로그인 페이지로 이동 (현재 위치 저장)
+        window.location.href = '/login'
+      }
+      return
+    }
+
+    // 우리회사 정보 체크
+    if (!currentCompany) {
+      alert('우리회사 정보를 먼저 등록해주세요.')
+      setCompanyModalOpen(true)
+      return
+    }
+
+    // 인증서 체크
+    setIsCheckingCertificate(true)
+    try {
+      const certCheckResult = await checkCertificate()
+
+      if (!certCheckResult.is_valid) {
+        // 인증서 미등록 - 안내 모달 표시
+        setCertificateRegistUrl(certCheckResult.regist_url || null)
+        setIsCheckingCertificate(false)
+        setShowGuideModal(true)
+        return
+      }
+
+      // 인증서 등록됨 - 발행 진행
+      setIsCheckingCertificate(false)
+      await proceedWithIssue()
+    } catch (error: any) {
+      setIsCheckingCertificate(false)
+      const errorMessage = formatError(error) || '인증서 확인 중 오류가 발생했습니다.'
+
+      // 인증서 관련 에러인 경우 안내 모달 표시
+      if (
+        errorMessage.includes('인증서') ||
+        errorMessage.includes('인증키') ||
+        errorMessage.includes('cert')
+      ) {
+        setShowGuideModal(true)
+      } else {
+        alert(`오류: ${errorMessage}`)
+      }
+    }
+  }
+
+  // 인증서 등록 안내 모달에서 계속하기 클릭
+  const handleGuideContinue = () => {
+    setShowGuideModal(false)
+    setShowSecurityCheckModal(true)
+  }
+
+  // 보안 환경 점검 완료 후
+  const handleSecurityCheckComplete = () => {
+    setShowSecurityCheckModal(false)
+
+    if (certificateRegistUrl) {
+      // 전자세금계산서 인증 서비스 페이지로 이동 (새 창)
+      window.open(
+        certificateRegistUrl,
+        '_blank',
+        'width=1200,height=800'
+      )
+
+      // 인증서 등록 완료 확인 버튼이 있는 모달 표시
+      setShowCertificateRegistrationModal(true)
+    } else {
+      // URL이 없는 경우 사용자 안내
+      alert('전자세금계산서 인증 서비스 페이지로 이동합니다.\n인증서 등록을 완료한 후 이 페이지로 돌아와주세요.')
+      window.open('https://www.barobill.co.kr/', '_blank')
+    }
+  }
+
+  // 인증서 등록 완료 확인
+  const handleCheckCertificateComplete = async () => {
+    try {
+      setIsCheckingCertificate(true)
+      const certCheckResult = await checkCertificate()
+      setIsCheckingCertificate(false)
+
+      if (certCheckResult.is_valid) {
+        setShowCertificateRegistrationModal(false)
+        setShowSuccessModal(true)
+      } else {
+        alert('인증서가 아직 등록되지 않았습니다.\n인증서 등록을 완료한 후 다시 시도해주세요.')
+      }
+    } catch (error) {
+      setIsCheckingCertificate(false)
+      alert('인증서 확인 중 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.')
+    }
+  }
+
+  // 보안 구성요소 준비 필요 시
+  const handlePrepareSecurity = () => {
+    setNeedsInstallation(false)
+    handleSecurityCheckComplete()
+  }
+
+  // 인증서 등록 완료 후 발행 계속
+  const handleSuccessContinue = async () => {
+    setShowSuccessModal(false)
+    await proceedWithIssue()
+  }
+
+  // 실제 발행 진행
+  const proceedWithIssue = async () => {
+    try {
+      const result = await handleIssue()
+      if (result?.success) {
+        setIsPreviewOpen(false)
+        alert(result.message || '세금계산서가 발행되었습니다!')
+      } else if (result?.error) {
+        // 인증서 관련 에러인 경우
+        if (
+          result.error.includes('인증서') ||
+          result.error.includes('인증키') ||
+          result.error.includes('cert')
+        ) {
+          // 인증서 등록 플로우로 다시 진입
+          setIsCheckingCertificate(true)
+          try {
+            const certCheckResult = await checkCertificate()
+            if (!certCheckResult.is_valid) {
+              setCertificateRegistUrl(certCheckResult.regist_url || null)
+              setIsCheckingCertificate(false)
+              setShowGuideModal(true)
+            } else {
+              setIsCheckingCertificate(false)
+              // 인증서는 있는데 발행 실패한 경우
+              alert('인증서 확인 중 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.')
+            }
+          } catch (error) {
+            setIsCheckingCertificate(false)
+            alert('인증서 확인 중 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.')
+          }
+        } else {
+          // 일반 에러
+          alert(`발행 실패: ${result.error}`)
+        }
+      }
+    } catch (error: any) {
+      const errorMessage = formatError(error) || '세금계산서 발행 중 오류가 발생했습니다.'
+      alert(`발행 실패: ${errorMessage}`)
     }
   }
 
@@ -100,8 +265,8 @@ export const InvoiceQuick: React.FC = () => {
           <button
             onClick={() => setCustomerModalOpen(true)}
             className={`h-12 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 relative ${buyer
-                ? 'bg-blue-500 dark:bg-blue-600 text-white shadow-md hover:shadow-lg'
-                : `bg-blue-500 dark:bg-blue-600 text-white shadow-md hover:shadow-lg ${showCustomerRing ? 'ring-2 ring-blue-300 dark:ring-blue-400' : ''}`
+              ? 'bg-blue-500 dark:bg-blue-600 text-white shadow-md hover:shadow-lg'
+              : `bg-blue-500 dark:bg-blue-600 text-white shadow-md hover:shadow-lg ${showCustomerRing ? 'ring-2 ring-blue-300 dark:ring-blue-400' : ''}`
               }`}
           >
             {!buyer && (
@@ -196,13 +361,13 @@ export const InvoiceQuick: React.FC = () => {
         <div className="max-w-[480px] mx-auto px-4 py-4">
           <button
             onClick={handleIssueWithPreview}
-            disabled={!isFormValid() || isIssuing}
-            className={`w-full h-14 rounded-xl font-semibold text-lg transition-colors ${isFormValid() && !isIssuing
+            disabled={!isFormValid() || isIssuing || isCheckingCertificate}
+            className={`w-full h-14 rounded-xl font-semibold text-lg transition-colors ${isFormValid() && !isIssuing && !isCheckingCertificate
               ? 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600'
               : 'bg-gray-300 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
               }`}
           >
-            {isIssuing ? '발행 중...' : '바로 발행'}
+            {isCheckingCertificate ? '보안 확인 중...' : isIssuing ? '발행 중...' : '바로 발행'}
           </button>
         </div>
       </div>
@@ -308,6 +473,35 @@ export const InvoiceQuick: React.FC = () => {
         isOpen={isCompanyModalOpen}
         onClose={() => setCompanyModalOpen(false)}
         onSelect={handleSelectCompany}
+      />
+
+      {/* 인증서 등록 안내 모달 */}
+      <CertificateRegistrationGuideModal
+        isOpen={showGuideModal}
+        onContinue={handleGuideContinue}
+        onCancel={() => setShowGuideModal(false)}
+      />
+
+      {/* 보안 환경 점검 모달 */}
+      <SecurityEnvironmentCheckModal
+        isOpen={showSecurityCheckModal}
+        onComplete={handleSecurityCheckComplete}
+        onPrepare={handlePrepareSecurity}
+        needsInstallation={needsInstallation}
+      />
+
+      {/* 인증서 등록 진행 중 모달 */}
+      <CertificateRegistrationModal
+        isOpen={showCertificateRegistrationModal}
+        onComplete={handleCheckCertificateComplete}
+        onCancel={() => setShowCertificateRegistrationModal(false)}
+        isChecking={isCheckingCertificate}
+      />
+
+      {/* 인증서 등록 완료 모달 */}
+      <CertificateRegistrationSuccessModal
+        isOpen={showSuccessModal}
+        onContinue={handleSuccessContinue}
       />
     </div>
   )

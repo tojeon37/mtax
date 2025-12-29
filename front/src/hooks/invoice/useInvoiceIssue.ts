@@ -8,13 +8,14 @@ import { useInvoiceStore } from '../../store/invoiceStore'
 import { useAuth } from '../useAuth'
 import { createInvoice } from '../../api/invoiceApi'
 import { useInvoiceValidation } from './useInvoiceValidation'
+import { useCompanyStore } from '../../store/useCompanyStore'
 
 export const useInvoiceIssue = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated } = useAuth()
   const { buyer, items, supplyValue, paymentType, paymentMethod, resetInvoice, setExpandedItemId } = useInvoiceStore()
-  const { validateBuyer, validateItems, validateCompanyAndCertificate } = useInvoiceValidation()
+  const { validateBuyer, validateItems } = useInvoiceValidation()
   const [isIssuing, setIsIssuing] = useState(false)
 
   const handleIssue = async () => {
@@ -41,17 +42,12 @@ export const useInvoiceIssue = () => {
       return
     }
 
-    // 회사 정보 및 인증서 검증
-    const companyValidation = await validateCompanyAndCertificate()
-    if (!companyValidation.isValid) {
-      const shouldGoToRegister = confirm(companyValidation.message)
+    // 회사 정보 검증 (인증서는 발행 시점에 체크)
+    const { currentCompany } = useCompanyStore.getState()
+    if (!currentCompany) {
+      const shouldGoToRegister = confirm('우리회사 정보가 등록되지 않았습니다.\n회사 등록 페이지로 이동하시겠습니까?')
       if (shouldGoToRegister) {
-        // 우리회사 정보가 없으면 회사 등록 페이지로, 공동인증서만 없으면 인증서 페이지로
-        if (!companyValidation.hasCompany) {
-          navigate('/company/new')
-        } else {
-          navigate('/certificate')
-        }
+        navigate('/company/new')
       }
       return
     }

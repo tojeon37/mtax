@@ -8,15 +8,6 @@ export const GuidePage: React.FC = () => {
           이용안내
         </h1>
 
-        {/* 인증서 안내 */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
-            <span className="font-semibold">인증서는</span>
-            <br />
-            사업자용인증서, 전자세금계산서용 인증서가 있어야 이용가능합니다.
-          </p>
-        </div>
-
         {/* [🔐 로그인 및 계정 이용] */}
         <section className="bg-white dark:bg-gray-800 rounded-lg p-5 shadow-sm">
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
@@ -25,6 +16,9 @@ export const GuidePage: React.FC = () => {
           <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
             <p>로그인하면 최대 90일 동안 자동 로그인 상태가 유지됩니다.</p>
             <p>90일 동안 접속하지 않으면, 보안을 위해 다시 로그인해 주세요.</p>
+            <p className="mt-3 text-gray-600 dark:text-gray-400">
+              사업자용인증서, 전자세금계산서용 인증서가 있어야 이용가능합니다.
+            </p>
           </div>
         </section>
 
@@ -58,26 +52,30 @@ export const GuidePage: React.FC = () => {
           </div>
         </section>
 
-        {/* [🧾 바로빌 연동 및 발행 상태 안내] */}
+        {/* [🧾 발행 상태 안내] */}
         <section className="bg-white dark:bg-gray-800 rounded-lg p-5 shadow-sm">
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
-            🧾 바로빌 연동 및 발행 상태 안내
+            🧾 발행 상태 안내
           </h2>
           <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-            <p>우리회사 정보를 등록하면 바로빌에도 자동으로 로그인됩니다.</p>
-            <p>전자세금계산서는 바로빌 시스템을 통해 발행됩니다.</p>
-            <p>발행 상태는 다음과 같이 표시됩니다.</p>
-            <p className="pl-4">
-              · <span className="font-bold text-yellow-600 dark:text-yellow-400">'대기'</span> 상태
+            <p>
+              전자세금계산서 발행 요청이 접수되면<br />
+              발행 진행 상황에 따라 상태가 표시됩니다.
+            </p>
+            <p className="pl-4 mt-3">
+              · <span className="font-bold text-yellow-600 dark:text-yellow-400">대기</span>
             </p>
             <p className="pl-8 text-gray-600 dark:text-gray-400">
-              → 바로빌로 전송된 상태이며, 이 단계에서는 발행취소가 가능합니다.
+              → 아직 최종 전송 전 단계로,<br />
+              이 단계에서는 취소가 가능합니다.
             </p>
-            <p className="pl-4">
-              · <span className="font-bold text-green-600 dark:text-green-400">'완료'</span> 상태
+            <p className="pl-4 mt-3">
+              · <span className="font-bold text-green-600 dark:text-green-400">완료</span>
             </p>
             <p className="pl-8 text-gray-600 dark:text-gray-400">
-              → 홈택스로 전송이 완료된 상태로, 발행취소는 불가능하며 수정이 필요한 경우 홈택스에서 '수정세금계산서'로 처리해야 합니다.
+              → 전송이 완료된 상태로,<br />
+              이후에는 취소할 수 없으며<br />
+              필요한 경우 수정세금계산서로 처리해야 합니다.
             </p>
           </div>
         </section>
@@ -88,8 +86,26 @@ export const GuidePage: React.FC = () => {
             🏢 서비스 안내
           </h2>
           <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-            <p>계발이는 전자세금계산서 간편발급 서비스로, 바로빌의 제휴 파트너 서비스입니다.</p>
-            <p>전자세금계산서 발행과 인증서 처리는 바로빌 시스템을 기반으로 제공됩니다.</p>
+            <p>계발이는 전자세금계산서 발행 과정을 단순화하기 위해 설계된 간편발급 서비스입니다.</p>
+            <p>
+              전자세금계산서 발행과 인증서 처리는<br />
+              금융 보안 기준을 충족한 바로빌 시스템을 기반으로 안정적으로 제공됩니다.
+            </p>
+          </div>
+        </section>
+
+        {/* [❓ 이 서비스는 왜 만들어졌나요?] */}
+        <section className="bg-white dark:bg-gray-800 rounded-lg p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
+            ❓ 이 서비스는 왜 만들어졌나요?
+          </h2>
+          <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            <p>이 서비스는</p>
+            <p className="pl-4">홈택스 전자세금계산서 발행 과정에서</p>
+            <p className="pl-4">반복적으로 소요되는 시간을 줄이기 위해 만들어졌습니다.</p>
+            <p className="mt-3">손택스나 홈택스를 통해 무료 발행도 가능하지만,</p>
+            <p>이 서비스는 발행 과정을 단순화하고</p>
+            <p>자주 사용하는 사업자를 위해 시간 절약에 집중했습니다.</p>
           </div>
         </section>
 
