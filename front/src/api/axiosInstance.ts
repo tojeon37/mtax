@@ -12,6 +12,7 @@ const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000, // 30초 타임아웃 설정 (인증서 확인 등 긴 작업 대비)
 });
 
 // Refresh token 갱신 중인지 추적 (무한 루프 방지)

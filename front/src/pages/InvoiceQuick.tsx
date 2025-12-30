@@ -114,7 +114,10 @@ export const InvoiceQuick: React.FC = () => {
         // 인증서 미등록 - 안내 모달 표시
         setCertificateRegistUrl(certCheckResult.regist_url || null)
         setIsCheckingCertificate(false)
-        setShowGuideModal(true)
+        // 모달 표시를 약간 지연시켜 상태 업데이트가 완료되도록 함
+        setTimeout(() => {
+          setShowGuideModal(true)
+        }, 100)
         return
       }
 
@@ -122,6 +125,7 @@ export const InvoiceQuick: React.FC = () => {
       setIsCheckingCertificate(false)
       await proceedWithIssue()
     } catch (error: any) {
+      // 에러 발생 시 항상 상태 리셋
       setIsCheckingCertificate(false)
       const errorMessage = formatError(error) || '인증서 확인 중 오류가 발생했습니다.'
 
@@ -131,7 +135,10 @@ export const InvoiceQuick: React.FC = () => {
         errorMessage.includes('인증키') ||
         errorMessage.includes('cert')
       ) {
-        setShowGuideModal(true)
+        // 모달 표시를 약간 지연시켜 상태 업데이트가 완료되도록 함
+        setTimeout(() => {
+          setShowGuideModal(true)
+        }, 100)
       } else {
         alert(`오류: ${errorMessage}`)
       }
@@ -141,28 +148,34 @@ export const InvoiceQuick: React.FC = () => {
   // 인증서 등록 안내 모달에서 계속하기 클릭
   const handleGuideContinue = () => {
     setShowGuideModal(false)
-    setShowSecurityCheckModal(true)
+    // 모달 전환 시 약간의 지연을 두어 상태 업데이트가 완료되도록 함
+    setTimeout(() => {
+      setShowSecurityCheckModal(true)
+    }, 150)
   }
 
   // 보안 환경 점검 완료 후
   const handleSecurityCheckComplete = () => {
     setShowSecurityCheckModal(false)
 
-    if (certificateRegistUrl) {
-      // 전자세금계산서 인증 서비스 페이지로 이동 (새 창)
-      window.open(
-        certificateRegistUrl,
-        '_blank',
-        'width=1200,height=800'
-      )
+    // 모달이 완전히 닫힌 후 다음 단계 진행
+    setTimeout(() => {
+      if (certificateRegistUrl) {
+        // 전자세금계산서 인증 서비스 페이지로 이동 (새 창)
+        window.open(
+          certificateRegistUrl,
+          '_blank',
+          'width=1200,height=800'
+        )
 
-      // 인증서 등록 완료 확인 버튼이 있는 모달 표시
-      setShowCertificateRegistrationModal(true)
-    } else {
-      // URL이 없는 경우 사용자 안내
-      alert('전자세금계산서 인증 서비스 페이지로 이동합니다.\n인증서 등록을 완료한 후 이 페이지로 돌아와주세요.')
-      window.open('https://www.barobill.co.kr/', '_blank')
-    }
+        // 인증서 등록 완료 확인 버튼이 있는 모달 표시
+        setShowCertificateRegistrationModal(true)
+      } else {
+        // URL이 없는 경우 사용자 안내
+        alert('전자세금계산서 인증 서비스 페이지로 이동합니다.\n인증서 등록을 완료한 후 이 페이지로 돌아와주세요.')
+        window.open('https://www.barobill.co.kr/', '_blank')
+      }
+    }, 200)
   }
 
   // 인증서 등록 완료 확인
@@ -174,7 +187,10 @@ export const InvoiceQuick: React.FC = () => {
 
       if (certCheckResult.is_valid) {
         setShowCertificateRegistrationModal(false)
-        setShowSuccessModal(true)
+        // 모달 전환 시 약간의 지연을 두어 상태 업데이트가 완료되도록 함
+        setTimeout(() => {
+          setShowSuccessModal(true)
+        }, 150)
       } else {
         alert('인증서가 아직 등록되지 않았습니다.\n인증서 등록을 완료한 후 다시 시도해주세요.')
       }
@@ -193,7 +209,10 @@ export const InvoiceQuick: React.FC = () => {
   // 인증서 등록 완료 후 발행 계속
   const handleSuccessContinue = async () => {
     setShowSuccessModal(false)
-    await proceedWithIssue()
+    // 모달이 완전히 닫힌 후 발행 진행
+    setTimeout(async () => {
+      await proceedWithIssue()
+    }, 150)
   }
 
   // 실제 발행 진행
@@ -217,7 +236,10 @@ export const InvoiceQuick: React.FC = () => {
             if (!certCheckResult.is_valid) {
               setCertificateRegistUrl(certCheckResult.regist_url || null)
               setIsCheckingCertificate(false)
-              setShowGuideModal(true)
+              // 모달 표시를 약간 지연시켜 상태 업데이트가 완료되도록 함
+              setTimeout(() => {
+                setShowGuideModal(true)
+              }, 100)
             } else {
               setIsCheckingCertificate(false)
               // 인증서는 있는데 발행 실패한 경우

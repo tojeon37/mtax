@@ -119,13 +119,14 @@ export const SecurityEnvironmentCheckModal: React.FC<SecurityEnvironmentCheckMod
 
   // 점검 완료 시 자동으로 다음 단계로
   useEffect(() => {
-    if (!isChecking && !needsInstallation) {
+    if (!isChecking && !needsInstallation && isOpen) {
+      // 모달이 열려있고 점검이 완료된 경우에만 자동 완료
       const timer = setTimeout(() => {
         onComplete()
-      }, 500)
+      }, 800) // 약간 더 긴 지연으로 모달 상태 업데이트 완료 보장
       return () => clearTimeout(timer)
     }
-  }, [isChecking, needsInstallation, onComplete])
+  }, [isChecking, needsInstallation, isOpen, onComplete])
 
   return null
 }
