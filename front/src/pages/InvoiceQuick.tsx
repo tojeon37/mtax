@@ -53,7 +53,6 @@ export const InvoiceQuick: React.FC = () => {
   const [showGuideModal, setShowGuideModal] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showCertificateRegistrationModal, setShowCertificateRegistrationModal] = useState(false)
-  const [certificateRegistUrl, setCertificateRegistUrl] = useState<string | null>(null)
   const [isCheckingCertificate, setIsCheckingCertificate] = useState(false)
 
   // 첫 번째 품목이 있으면 자동으로 펼치기
@@ -109,7 +108,6 @@ export const InvoiceQuick: React.FC = () => {
 
       if (!certCheckResult.is_valid) {
         // 인증서 미등록 - 안내 모달 표시
-        setCertificateRegistUrl(certCheckResult.regist_url || null)
         setIsCheckingCertificate(false)
         // 모달 표시를 약간 지연시켜 상태 업데이트가 완료되도록 함
         setTimeout(() => {
@@ -213,7 +211,6 @@ export const InvoiceQuick: React.FC = () => {
           try {
             const certCheckResult = await checkCertificate()
             if (!certCheckResult.is_valid) {
-              setCertificateRegistUrl(certCheckResult.regist_url || null)
               setIsCheckingCertificate(false)
               // 모달 표시를 약간 지연시켜 상태 업데이트가 완료되도록 함
               setTimeout(() => {
@@ -481,7 +478,6 @@ export const InvoiceQuick: React.FC = () => {
         isOpen={showGuideModal}
         onCancel={() => setShowGuideModal(false)}
         onStartRegistration={handleStartCertificateRegistration}
-        showStartButton={true}
       />
 
       {/* 인증서 등록 진행 중 모달 */}

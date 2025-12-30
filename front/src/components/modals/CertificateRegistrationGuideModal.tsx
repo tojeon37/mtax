@@ -4,14 +4,12 @@ interface CertificateRegistrationGuideModalProps {
   isOpen: boolean
   onCancel: () => void
   onStartRegistration: () => void
-  showStartButton?: boolean
 }
 
 export const CertificateRegistrationGuideModal: React.FC<CertificateRegistrationGuideModalProps> = ({
   isOpen,
   onCancel,
   onStartRegistration,
-  showStartButton = true,
 }) => {
   if (!isOpen) return null
 
