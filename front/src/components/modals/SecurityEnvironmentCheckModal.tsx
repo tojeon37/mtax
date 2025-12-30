@@ -16,6 +16,7 @@ export const SecurityEnvironmentCheckModal: React.FC<SecurityEnvironmentCheckMod
   const [checkProgress, setCheckProgress] = useState(0)
   const [isChecking, setIsChecking] = useState(true)
 
+  // 모든 Hook은 조건부 return 전에 호출되어야 함
   useEffect(() => {
     if (!isOpen) {
       setCheckProgress(0)
@@ -41,6 +42,17 @@ export const SecurityEnvironmentCheckModal: React.FC<SecurityEnvironmentCheckMod
 
     return () => clearInterval(timer)
   }, [isOpen])
+
+  // 점검 완료 시 자동으로 다음 단계로
+  useEffect(() => {
+    if (!isChecking && !needsInstallation && isOpen) {
+      // 모달이 열려있고 점검이 완료된 경우에만 자동 완료
+      const timer = setTimeout(() => {
+        onComplete()
+      }, 800) // 약간 더 긴 지연으로 모달 상태 업데이트 완료 보장
+      return () => clearTimeout(timer)
+    }
+  }, [isChecking, needsInstallation, isOpen, onComplete])
 
   if (!isOpen) return null
 
@@ -116,17 +128,6 @@ export const SecurityEnvironmentCheckModal: React.FC<SecurityEnvironmentCheckMod
       </div>
     )
   }
-
-  // 점검 완료 시 자동으로 다음 단계로
-  useEffect(() => {
-    if (!isChecking && !needsInstallation && isOpen) {
-      // 모달이 열려있고 점검이 완료된 경우에만 자동 완료
-      const timer = setTimeout(() => {
-        onComplete()
-      }, 800) // 약간 더 긴 지연으로 모달 상태 업데이트 완료 보장
-      return () => clearTimeout(timer)
-    }
-  }, [isChecking, needsInstallation, isOpen, onComplete])
 
   return null
 }
