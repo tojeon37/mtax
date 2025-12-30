@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useInvoiceStore } from '../store/invoiceStore'
+import { useCompanyStore } from '../store/useCompanyStore'
+import { useAuth } from '../hooks/useAuth'
 import { ItemInput } from '../components/invoice/ItemInput'
 import { SummaryBox } from '../components/invoice/SummaryBox'
 import { PreviewModal } from '../components/invoice/PreviewModal'
@@ -8,13 +11,15 @@ import { CompanySelectModal } from '../components/modals/CompanySelectModal'
 import { CertificateRegistrationGuideModal } from '../components/modals/CertificateRegistrationGuideModal'
 import { CertificateRegistrationSuccessModal } from '../components/modals/CertificateRegistrationSuccessModal'
 import { CertificateRegistrationModal } from '../components/modals/CertificateRegistrationModal'
-import { useQuickInvoice } from '../hooks/invoice/useQuickInvoice'
 import { useBarobillInvoice } from '../hooks/invoice/useBarobillInvoice'
 import { useInvoiceValidation } from '../hooks/invoice/useInvoiceValidation'
 import { checkCertificate } from '../api/barobillApi'
 import { formatError } from '../utils/errorHelpers'
+import { Client } from '../api/clientApi'
+import { Company } from '../api/companyApi'
 
 export const InvoiceQuick: React.FC = () => {
+  const location = useLocation()
   const {
     paymentType,
     paymentMethod,
@@ -22,25 +27,18 @@ export const InvoiceQuick: React.FC = () => {
     setPaymentType,
     setPaymentMethod,
     setIssueDate,
-  } = useInvoiceStore()
-
-  const {
     buyer,
     items,
+    addItem,
     updateItem,
+    removeItem,
+    setBuyer,
     expandedItemId,
     setExpandedItemId,
-    currentCompany,
-    isAuthenticated,
-    isCustomerModalOpen,
-    setCustomerModalOpen,
-    isCompanyModalOpen,
-    setCompanyModalOpen,
-    handleAddItem,
-    handleRemoveItem,
-    handleSelectCustomer,
-    handleSelectCompany,
-  } = useQuickInvoice()
+  } = useInvoiceStore()
+
+  const { currentCompany, setCurrentCompany } = useCompanyStore()
+  const { isAuthenticated } = useAuth()
 
   const { handleIssue, isIssuing } = useBarobillInvoice()
   const { isFormValid } = useInvoiceValidation()
@@ -48,6 +46,8 @@ export const InvoiceQuick: React.FC = () => {
   const [showOptionSheet, setShowOptionSheet] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [showCustomerRing, setShowCustomerRing] = useState(true)
+  const [isCustomerModalOpen, setCustomerModalOpen] = useState(false)
+  const [isCompanyModalOpen, setCompanyModalOpen] = useState(false)
 
   // 인증서 등록 플로우 상태
   const [showGuideModal, setShowGuideModal] = useState(false)
@@ -71,6 +71,45 @@ export const InvoiceQuick: React.FC = () => {
       return () => clearTimeout(timer)
     }
   }, [showCustomerRing])
+
+  // 품목 추가 핸들러
+  const handleAddItem = () => {
+    addItem()
+    setTimeout(() => {
+      const newItems = useInvoiceStore.getState().items
+      if (newItems.length > 0) {
+        setExpandedItemId(newItems[newItems.length - 1].id)
+      }
+    }, 0)
+  }
+
+  // 품목 삭제 핸들러
+  const handleRemoveItem = (itemId: string) => {
+    removeItem(itemId)
+    if (expandedItemId === itemId && items.length > 1) {
+      const remainingItems = items.filter(i => i.id !== itemId)
+      setExpandedItemId(remainingItems[0]?.id || null)
+    }
+  }
+
+  // 거래처 선택 핸들러
+  const handleSelectCustomer = (client: Client) => {
+    setBuyer({
+      id: client.id.toString(),
+      name: client.companyName,
+      businessNumber: client.businessNumber,
+      ceoName: client.ceoName,
+      address: client.address,
+      email: client.email,
+      businessType: client.businessType,
+      businessItem: client.businessItem,
+    })
+  }
+
+  // 회사 선택 핸들러
+  const handleSelectCompany = (company: Company) => {
+    setCurrentCompany(company)
+  }
 
   // 옵션 변경을 위한 로컬 상태
   const [localIssueDate, setLocalIssueDate] = useState(issueDate)
