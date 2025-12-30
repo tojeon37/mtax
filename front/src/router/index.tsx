@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { Home } from '../pages/Home'
 import { Login } from '../pages/Login'
 import { Signup } from '../pages/Signup'
+import { Dashboard } from '../pages/Dashboard'
 import { InvoiceQuick } from '../pages/InvoiceQuick'
 import { History } from '../pages/History'
 import ClientsPage from '../pages/ClientsPage'
@@ -28,6 +29,14 @@ import { ProtectedRoute } from '../components/auth/ProtectedRoute'
 export const AppRouter = () => {
   return (
     <Routes>
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<InvoiceQuick />} />
       <Route path="/invoice" element={<InvoiceQuick />} />
       <Route path="/invoice/quick" element={<InvoiceQuick />} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../hooks/useAuth'
 import { formatError } from '../utils/errorHelpers'
@@ -12,17 +12,15 @@ interface LoginFormData {
 export const Login: React.FC = () => {
   const { login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const [error, setError] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
 
   // 이미 로그인되어 있으면 리다이렉트
   useEffect(() => {
     if (isAuthenticated) {
-      const from = (location.state as any)?.from?.pathname || '/invoice/quick'
-      navigate(from, { replace: true })
+      navigate('/dashboard', { replace: true })
     }
-  }, [isAuthenticated, navigate, location])
+  }, [isAuthenticated, navigate])
 
   const {
     register,
@@ -39,9 +37,8 @@ export const Login: React.FC = () => {
         username: data.username,
         password: data.password,
       })
-      // 로그인 성공 시 원래 가려던 페이지로 이동 (없으면 /invoice/quick)
-      const from = (location.state as any)?.from?.pathname || '/invoice/quick'
-      navigate(from, { replace: true })
+      // 로그인 성공 시 대시보드로 이동
+      navigate('/dashboard', { replace: true })
     } catch (err: any) {
       setError(formatError(err) || '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.')
     } finally {

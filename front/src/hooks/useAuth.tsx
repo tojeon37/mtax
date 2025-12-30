@@ -119,10 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData)
     }
     
-    // 로그인 후 회사 정보 로드
-    loadCurrentCompany()
-    
     // navigate는 Login 컴포넌트에서 처리하도록 함
+    // 로그인 단계에서는 회사 조회, 발행, 인증서 체크를 실행하지 않음
   }
 
   const register = async (payload: RegisterRequest) => {

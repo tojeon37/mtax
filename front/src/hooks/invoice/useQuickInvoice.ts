@@ -58,56 +58,8 @@ export const useQuickInvoice = () => {
     }
   }
 
-  // URL 파라미터를 읽어서 폼 초기화
-  useEffect(() => {
-    async function initData() {
-      if (!isAuthenticated) {
-        return
-      }
-
-      // 거래처 정보 초기화
-      if (clientId) {
-        try {
-          const c = await fetchClient(clientId)
-          if (c.id) {
-            recordClientUsage(parseInt(c.id))
-          }
-          setBuyer({
-            id: c.id,
-            name: c.name,
-            businessNumber: c.bizNo,
-          })
-          setBuyerSearch(c.name)
-        } catch (e) {
-          // 에러 발생해도 페이지는 계속 표시
-        }
-      }
-
-      // 회사 정보 초기화
-      if (companyId) {
-        try {
-          const companies = await getCompanies()
-          const selectedCompany = companies.find((c) => c.id === parseInt(companyId))
-          if (selectedCompany) {
-            setCurrentCompany(selectedCompany)
-          }
-        } catch (e) {
-          // 에러 발생해도 페이지는 계속 표시
-        }
-      } else {
-        const { currentCompany: storeCompany } = useCompanyStore.getState()
-        if (!storeCompany) {
-          try {
-            await loadCurrentCompany()
-          } catch (e) {
-            // 에러 발생해도 페이지는 계속 표시
-          }
-        }
-      }
-    }
-    initData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId, companyId, isAuthenticated])
+  // 페이지 마운트 시 자동 네트워크 요청 제거
+  // 발행 플로우는 버튼 클릭 이벤트에서만 실행됨
 
   // MainPage에서 선택된 거래처 정보 받기
   useEffect(() => {
