@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
 import { useInvoiceStore } from '../store/invoiceStore'
 import { useCompanyStore } from '../store/useCompanyStore'
 import { useAuth } from '../hooks/useAuth'
@@ -19,7 +18,6 @@ import { Client } from '../api/clientApi'
 import { Company } from '../api/companyApi'
 
 export const InvoiceQuick: React.FC = () => {
-  const location = useLocation()
   const {
     paymentType,
     paymentMethod,
