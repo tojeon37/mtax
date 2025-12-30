@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.requests import Request
 
 from app.api.v1 import api_router
 from app.core.config import settings
@@ -60,6 +61,21 @@ def init_db_endpoint():
             "status": "error",
             "message": str(e),
         }
+
+
+# ======================================================
+# 🔍 요청 디버깅 미들웨어
+# ======================================================
+@app.middleware("http")
+async def debug_middleware(request: Request, call_next):
+    origin = request.headers.get("origin", "N/A")
+    method = request.method
+    path = request.url.path
+
+    print(f"[DEBUG] {method} {path} | Origin: {origin}")
+
+    response = await call_next(request)
+    return response
 
 
 # ======================================================
