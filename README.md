@@ -274,3 +274,4 @@ npm run build
 ## 문의
 
 프로젝트 관련 문의사항이 있으시면 관리자에게 연락해주세요.
+ban.haus01@gmail.com
