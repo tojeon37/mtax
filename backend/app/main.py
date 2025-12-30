@@ -67,6 +67,7 @@ def init_db_endpoint():
 # ======================================================
 origins = [
     "https://mtax.pages.dev",
+    "https://tax.banhaus.kr",
 ]
 
 app.add_middleware(
