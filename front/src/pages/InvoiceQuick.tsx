@@ -154,27 +154,31 @@ export const InvoiceQuick: React.FC = () => {
     }, 150)
   }
 
-  // 보안 환경 점검 완료 후
+  // 보안 환경 점검 완료 후 - 인증서 등록 안내 화면으로 이동
   const handleSecurityCheckComplete = () => {
     setShowSecurityCheckModal(false)
-
-    // 모달이 완전히 닫힌 후 다음 단계 진행
+    // 보안 점검 완료 후 인증서 등록 안내 모달을 다시 표시 (인증서 등록 시작 버튼 포함)
     setTimeout(() => {
-      if (certificateRegistUrl) {
-        // 전자세금계산서 인증 서비스 페이지로 이동 (새 창)
-        window.open(
-          certificateRegistUrl,
-          '_blank',
-          'width=1200,height=800'
-        )
+      setShowGuideModal(true)
+    }, 200)
+  }
 
-        // 인증서 등록 완료 확인 버튼이 있는 모달 표시
-        setShowCertificateRegistrationModal(true)
-      } else {
-        // URL이 없는 경우 사용자 안내
-        alert('전자세금계산서 인증 서비스 페이지로 이동합니다.\n인증서 등록을 완료한 후 이 페이지로 돌아와주세요.')
-        window.open('https://www.barobill.co.kr/', '_blank')
-      }
+  // 인증서 등록 시작 버튼 클릭 시
+  const handleStartCertificateRegistration = () => {
+    setShowGuideModal(false)
+    
+    // 인증서 등록 페이지로 이동 (새 창)
+    // 사용자가 명시적으로 버튼을 클릭했을 때만 실행되므로 팝업 차단 없음
+    const registrationUrl = 'https://www.barobill.co.kr/join/login.asp?AURL=%2Fcert%2Fc%5Fcert%2Easp%3F'
+    window.open(
+      registrationUrl,
+      '_blank',
+      'width=1200,height=800'
+    )
+
+    // 인증서 등록 완료 확인 버튼이 있는 모달 표시
+    setTimeout(() => {
+      setShowCertificateRegistrationModal(true)
     }, 200)
   }
 
@@ -502,6 +506,8 @@ export const InvoiceQuick: React.FC = () => {
         isOpen={showGuideModal}
         onContinue={handleGuideContinue}
         onCancel={() => setShowGuideModal(false)}
+        onStartRegistration={handleStartCertificateRegistration}
+        showStartButton={!!certificateRegistUrl && showSecurityCheckModal === false}
       />
 
       {/* 보안 환경 점검 모달 */}
