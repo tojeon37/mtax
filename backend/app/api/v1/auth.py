@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from app.db.session import get_db
+from app.db.session import get_db, SessionLocal
 from app.schemas.user import (
     UserCreate,
     UserUpdate,
@@ -249,38 +249,63 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     request: Request = None,
-    db: Session = Depends(get_db),
 ):
-    # 사용자 조회
-    user = db.query(User).filter(User.barobill_id == form_data.username).first()
+    db = None
+    try:
+        db = SessionLocal()
 
-    if not user or not verify_password(form_data.password, user.password_hash):
+        user = db.query(User).filter(User.barobill_id == form_data.username).first()
+
+        if not user or not verify_password(form_data.password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="바로빌 아이디 또는 비밀번호가 올바르지 않습니다.",
+            )
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="비활성화된 사용자입니다.",
+            )
+
+        tokens = AuthService.create_tokens(user)
+
+        refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        AuthService.save_refresh_token(
+            db, user, tokens["refresh_token"], refresh_token_expires
+        )
+
+        if request:
+            user_agent = request.headers.get("User-Agent", "Unknown Device")
+            ip_address = request.client.host if request.client else "0.0.0.0"
+            AuthService.save_user_session(
+                db,
+                user,
+                tokens["access_token"],
+                user_agent,
+                ip_address,
+            )
+            AuthService.save_device_session(db, user, user_agent, ip_address)
+
+        db.commit()
+        return tokens
+
+    except HTTPException:
+        if db:
+            db.rollback()
+        raise
+
+    except Exception:
+        if db:
+            db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="바로빌 아이디 또는 비밀번호가 올바르지 않습니다.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="현재 서버가 바쁩니다. 잠시 후 다시 시도해주세요.",
         )
 
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="비활성화된 사용자입니다.",
-        )
-
-    tokens = AuthService.create_tokens(user)
-    refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    AuthService.save_refresh_token(
-        db, user, tokens["refresh_token"], refresh_token_expires
-    )
-
-    if request:
-        user_agent = request.headers.get("User-Agent", "Unknown Device")
-        ip_address = request.client.host if request.client else "0.0.0.0"
-        AuthService.save_user_session(
-            db, user, tokens["access_token"], user_agent, ip_address
-        )
-        AuthService.save_device_session(db, user, user_agent, ip_address)
-
-    return tokens
+    finally:
+        if db:
+            db.close()
 
 
 @router.get("/check-id/{barobill_id}")

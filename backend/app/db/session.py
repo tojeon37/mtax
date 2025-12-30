@@ -7,19 +7,18 @@ from app.core.config import settings
 # =========================
 engine = create_engine(
     settings.database_url,
-
     # ✅ Cloud Run / Cloud SQL 안정 옵션
-    pool_pre_ping=True,     # 죽은 커넥션 자동 감지
-    pool_recycle=1800,      # 30분마다 커넥션 재생성 (Cloud SQL idle timeout 대응)
-
+    pool_pre_ping=True,  # 죽은 커넥션 자동 감지
+    pool_recycle=1800,  # 30분마다 커넥션 재생성 (Cloud SQL idle timeout 대응)
     # ✅ Serverless 환경 권장 설정
-    pool_size=5,            # 기본값보다 명시적으로 작게
-    max_overflow=2,         # 순간 트래픽 여유
-    pool_timeout=30,        # 커넥션 대기 최대 시간
-
+    pool_size=5,  # 기본값보다 명시적으로 작게
+    max_overflow=2,  # 순간 트래픽 여유
+    pool_timeout=2,  # 커넥션 대기 최대 시간 (2초로 단축 - 느린 서버 즉시 실패)
+    # 연결 타임아웃 설정 (느린 서버 즉시 실패)
+    connect_args={"connect_timeout": 2},
     # 디버그용
     echo=False,
-    future=True,            # SQLAlchemy 2.0 스타일
+    future=True,  # SQLAlchemy 2.0 스타일
 )
 
 # =========================
