@@ -67,6 +67,8 @@ def init_db_endpoint():
 # ======================================================
 origins = [
     "https://tax.banhaus.kr",  # ✅ 운영 프론트
+    "https://mtax.pages.dev",  # ✅ Cloudflare Pages 프론트
+    "https://*.pages.dev",  # ✅ Cloudflare Pages 와일드카드
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:3000",
