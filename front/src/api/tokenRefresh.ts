@@ -1,6 +1,4 @@
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+import axiosInstance from './axiosInstance'
 
 /**
  * Refresh token을 사용하여 새로운 access token 발급
@@ -14,8 +12,8 @@ export async function refreshAccessToken(): Promise<string | null> {
   }
 
   try {
-    const res = await axios.post<{ access_token: string; token_type: string }>(
-      `${API_BASE_URL}/auth/refresh`,
+    const res = await axiosInstance.post<{ access_token: string; token_type: string }>(
+      '/auth/refresh',
       { refresh_token: refresh }
     )
     
@@ -24,9 +22,6 @@ export async function refreshAccessToken(): Promise<string | null> {
     if (token) {
       // localStorage에 새 access token 저장
       localStorage.setItem('access_token', token)
-      
-      // axios 기본 헤더와 인스턴스 헤더 모두 업데이트
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
       
       return token
     }
@@ -37,7 +32,6 @@ export async function refreshAccessToken(): Promise<string | null> {
     // 모든 토큰 제거 및 로그인 페이지로 리다이렉트
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
-    delete axios.defaults.headers.common['Authorization']
     
     // 로그인 페이지가 아닌 경우에만 리다이렉트
     const isLoginPage = window.location.pathname === '/login'

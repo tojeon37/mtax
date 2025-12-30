@@ -1,7 +1,4 @@
-import axios from 'axios'
 import axiosInstance from './axiosInstance'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
 
 export interface LoginRequest {
   username: string // 바로빌 아이디
@@ -70,8 +67,8 @@ export const login = async (payload: LoginRequest): Promise<LoginResponse> => {
   params.append('username', payload.username)
   params.append('password', payload.password)
 
-  const response = await axios.post<LoginResponse>(
-    `${API_BASE_URL}/auth/login`,
+  const response = await axiosInstance.post<LoginResponse>(
+    '/auth/login',
     params.toString(),
     {
       headers: {
@@ -83,7 +80,7 @@ export const login = async (payload: LoginRequest): Promise<LoginResponse> => {
   // 로그인 성공 시 사용자 정보 조회
   if (response.data.access_token) {
     try {
-      const userResponse = await axios.get(`${API_BASE_URL}/auth/me`, {
+      const userResponse = await axiosInstance.get('/auth/me', {
         headers: {
           Authorization: `Bearer ${response.data.access_token}`,
         },
@@ -107,8 +104,8 @@ export const login = async (payload: LoginRequest): Promise<LoginResponse> => {
 export const checkUsername = async (
   username: string
 ): Promise<CheckUsernameResponse> => {
-  const response = await axios.get<CheckUsernameResponse>(
-    `${API_BASE_URL}/auth/check-username/${username}`
+  const response = await axiosInstance.get<CheckUsernameResponse>(
+    `/auth/check-username/${username}`
   )
   return response.data
 }
@@ -140,8 +137,8 @@ export const register = async (
   if (payload.manager_tel) requestBody.manager_tel = payload.manager_tel
 
   console.log('회원가입 API 요청:', requestBody)
-  const response = await axios.post<LoginResponse>(
-    `${API_BASE_URL}/auth/register`,
+  const response = await axiosInstance.post<LoginResponse>(
+    '/auth/register',
     requestBody
   )
   console.log('회원가입 API 응답:', response.data)
@@ -149,7 +146,7 @@ export const register = async (
   // 회원가입 성공 시 자동 로그인
   if (response.data.access_token) {
     try {
-      const userResponse = await axios.get(`${API_BASE_URL}/auth/me`, {
+      const userResponse = await axiosInstance.get('/auth/me', {
         headers: {
           Authorization: `Bearer ${response.data.access_token}`,
         },

@@ -2,7 +2,10 @@ import axios from "axios";
 import { getToken } from "./authApi";
 import { refreshAccessToken } from "./tokenRefresh";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+// API 기본 URL 설정
+// 환경변수 VITE_API_BASE_URL이 설정되어 있으면 사용하고, 없으면 localhost 기본값 사용
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,

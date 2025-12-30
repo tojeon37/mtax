@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   login as loginApi,
   register as registerApi,
+  getUserInfo,
   getToken,
   removeToken,
   saveToken,
@@ -11,9 +12,6 @@ import {
   RegisterRequest,
 } from '../api/authApi'
 import { useCompanyStore } from '../store/useCompanyStore'
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
 
 interface User {
   id: number
@@ -70,17 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const fetchUserInfo = async (token: string) => {
-      // axios 기본 헤더에 토큰 설정
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      // 토큰을 저장하여 axiosInstance 인터셉터가 사용할 수 있도록 함
+      saveToken(token)
       
       try {
         // 토큰이 있으면 사용자 정보 조회
-        const response = await axios.get(`${API_BASE_URL}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        setUser(response.data)
+        const userData = await getUserInfo()
+        setUser(userData)
         // 사용자 정보 로드 후 회사 정보도 로드
         loadCurrentCompany()
       } catch (error: any) {
@@ -93,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           // 토큰이 유효하지 않으면 삭제
           removeToken()
-          delete axios.defaults.headers.common['Authorization']
         }
       } finally {
         setLoading(false)
@@ -118,19 +111,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.setItem('barobill_password', payload.password)
     }
     
-    // axios 기본 헤더에 토큰 설정
-    axios.defaults.headers.common['Authorization'] = `Bearer ${response.access_token}`
-    
     if (response.user) {
       setUser(response.user)
     } else {
       // 사용자 정보가 없으면 다시 조회
-      const userResponse = await axios.get(`${API_BASE_URL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${response.access_token}`,
-        },
-      })
-      setUser(userResponse.data)
+      const userData = await getUserInfo()
+      setUser(userData)
     }
     
     // 로그인 후 회사 정보 로드
@@ -157,22 +143,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sessionStorage.setItem('barobill_password', payload.password)
       }
       
-      // axios 기본 헤더에 토큰 설정
-      axios.defaults.headers.common['Authorization'] = `Bearer ${response.access_token}`
-      
       if (response.user) {
         setUser(response.user)
         console.log('사용자 정보 설정 완료:', response.user)
       } else {
         // 사용자 정보가 없으면 다시 조회
         console.log('사용자 정보 조회 중...')
-        const userResponse = await axios.get(`${API_BASE_URL}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${response.access_token}`,
-          },
-        })
-        setUser(userResponse.data)
-        console.log('사용자 정보 조회 완료:', userResponse.data)
+        const userData = await getUserInfo()
+        setUser(userData)
+        console.log('사용자 정보 조회 완료:', userData)
       }
     
       // 회원가입 후 회사 정보 로드
@@ -189,7 +168,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     removeToken()
     // 세션 스토리지의 비밀번호도 삭제
     sessionStorage.removeItem('barobill_password')
-    delete axios.defaults.headers.common['Authorization']
     setUser(null)
     // 로그아웃 시 회사 정보도 초기화
     const { setCurrentCompany } = useCompanyStore.getState()
