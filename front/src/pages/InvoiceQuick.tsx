@@ -6,7 +6,6 @@ import { PreviewModal } from '../components/invoice/PreviewModal'
 import { CustomerSelectModal } from '../components/invoice/CustomerSelectModal'
 import { CompanySelectModal } from '../components/modals/CompanySelectModal'
 import { CertificateRegistrationGuideModal } from '../components/modals/CertificateRegistrationGuideModal'
-import { SecurityEnvironmentCheckModal } from '../components/modals/SecurityEnvironmentCheckModal'
 import { CertificateRegistrationSuccessModal } from '../components/modals/CertificateRegistrationSuccessModal'
 import { CertificateRegistrationModal } from '../components/modals/CertificateRegistrationModal'
 import { useQuickInvoice } from '../hooks/invoice/useQuickInvoice'
@@ -52,10 +51,8 @@ export const InvoiceQuick: React.FC = () => {
 
   // 인증서 등록 플로우 상태
   const [showGuideModal, setShowGuideModal] = useState(false)
-  const [showSecurityCheckModal, setShowSecurityCheckModal] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showCertificateRegistrationModal, setShowCertificateRegistrationModal] = useState(false)
-  const [needsInstallation, setNeedsInstallation] = useState(false)
   const [certificateRegistUrl, setCertificateRegistUrl] = useState<string | null>(null)
   const [isCheckingCertificate, setIsCheckingCertificate] = useState(false)
 
@@ -145,23 +142,6 @@ export const InvoiceQuick: React.FC = () => {
     }
   }
 
-  // 인증서 등록 안내 모달에서 계속하기 클릭
-  const handleGuideContinue = () => {
-    setShowGuideModal(false)
-    // 모달 전환 시 약간의 지연을 두어 상태 업데이트가 완료되도록 함
-    setTimeout(() => {
-      setShowSecurityCheckModal(true)
-    }, 150)
-  }
-
-  // 보안 환경 점검 완료 후 - 인증서 등록 안내 화면으로 이동
-  const handleSecurityCheckComplete = () => {
-    setShowSecurityCheckModal(false)
-    // 보안 점검 완료 후 인증서 등록 안내 모달을 다시 표시 (인증서 등록 시작 버튼 포함)
-    setTimeout(() => {
-      setShowGuideModal(true)
-    }, 200)
-  }
 
   // 인증서 등록 시작 버튼 클릭 시
   const handleStartCertificateRegistration = () => {
@@ -204,11 +184,6 @@ export const InvoiceQuick: React.FC = () => {
     }
   }
 
-  // 보안 구성요소 준비 필요 시
-  const handlePrepareSecurity = () => {
-    setNeedsInstallation(false)
-    handleSecurityCheckComplete()
-  }
 
   // 인증서 등록 완료 후 발행 계속
   const handleSuccessContinue = async () => {
@@ -504,18 +479,9 @@ export const InvoiceQuick: React.FC = () => {
       {/* 인증서 등록 안내 모달 */}
       <CertificateRegistrationGuideModal
         isOpen={showGuideModal}
-        onContinue={handleGuideContinue}
         onCancel={() => setShowGuideModal(false)}
         onStartRegistration={handleStartCertificateRegistration}
-        showStartButton={!!certificateRegistUrl && showSecurityCheckModal === false}
-      />
-
-      {/* 보안 환경 점검 모달 */}
-      <SecurityEnvironmentCheckModal
-        isOpen={showSecurityCheckModal}
-        onComplete={handleSecurityCheckComplete}
-        onPrepare={handlePrepareSecurity}
-        needsInstallation={needsInstallation}
+        showStartButton={true}
       />
 
       {/* 인증서 등록 진행 중 모달 */}
