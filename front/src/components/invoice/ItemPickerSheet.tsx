@@ -22,64 +22,6 @@ interface ItemPickerSheetProps {
 }
 
 // 더미 데이터 (TODO: 실제 API 연결 필요)
-const DUMMY_FAVORITES: Item[] = [
-  {
-    id: '1',
-    name: '컴퓨터',
-    specification: '데스크탑',
-    unitPrice: 1500000,
-    supplyValue: 1500000,
-  },
-  {
-    id: '2',
-    name: '모니터',
-    specification: '27인치',
-    unitPrice: 300000,
-    supplyValue: 300000,
-  },
-  {
-    id: '3',
-    name: '키보드',
-    specification: '기계식',
-    unitPrice: 150000,
-    supplyValue: 150000,
-  },
-  {
-    id: '4',
-    name: '마우스',
-    specification: '무선',
-    unitPrice: 50000,
-    supplyValue: 50000,
-  },
-  {
-    id: '5',
-    name: '의자',
-    specification: '사무용',
-    unitPrice: 200000,
-    supplyValue: 200000,
-  },
-  {
-    id: '6',
-    name: '책상',
-    specification: 'L자형',
-    unitPrice: 400000,
-    supplyValue: 400000,
-  },
-  {
-    id: '7',
-    name: '프린터',
-    specification: '잉크젯',
-    unitPrice: 250000,
-    supplyValue: 250000,
-  },
-  {
-    id: '8',
-    name: '스캐너',
-    specification: 'A4',
-    unitPrice: 180000,
-    supplyValue: 180000,
-  },
-]
 
 const DUMMY_RECENTS: Item[] = [
   {
@@ -184,7 +126,6 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
   
   // API에서 자주 사용하는 품목 불러오기
   const [localFavorites, setLocalFavorites] = useState<Item[]>([])
-  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false)
   
   // localStorage에서 최근 사용 품목 불러오기 (임시 유지)
   const [localRecents, setLocalRecents] = useState<Item[]>([])
