@@ -8,6 +8,7 @@ interface ItemPickerSheetProps {
   favorites: Item[]
   recents: Item[]
   onSelect: (item: Item) => void
+  onAddNew?: () => void
 }
 
 // 더미 데이터 (TODO: 실제 API 연결 필요)
@@ -159,9 +160,11 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
   favorites,
   recents,
   onSelect,
+  onAddNew,
 }) => {
   // 관리 모드 상태
   const [isManageMode, setIsManageMode] = useState(false)
+  const [isAddingNew, setIsAddingNew] = useState(false)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<{ name: string; specification: string; unitPrice: string }>({
     name: '',
@@ -197,7 +200,9 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
       
       // 모달이 열릴 때 관리 모드 초기화
       setIsManageMode(false)
+      setIsAddingNew(false)
       setEditingItemId(null)
+      setEditForm({ name: '', specification: '', unitPrice: '' })
     }
   }, [open, favorites, recents])
   
@@ -275,13 +280,57 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
     setLocalFavorites(updatedFavorites)
     saveFavoriteItems(updatedFavorites)
     setEditingItemId(null)
+    setIsAddingNew(false)
     setEditForm({ name: '', specification: '', unitPrice: '' })
     
     // TODO: 실제 API 연동 시 이 부분에서 API 호출
   }
 
+  const handleAddNew = () => {
+    if (onAddNew) {
+      // 외부에서 제공된 핸들러 사용
+      onAddNew()
+      onClose()
+    } else {
+      // 내부에서 새 품목 추가 모드로 전환
+      setIsAddingNew(true)
+      setEditingItemId('new')
+      setEditForm({ name: '', specification: '', unitPrice: '' })
+    }
+  }
+
+  const handleSaveNew = () => {
+    if (!editForm.name.trim()) {
+      alert('품목명을 입력해주세요.')
+      return
+    }
+    
+    const unitPrice = Number(editForm.unitPrice.replace(/,/g, '')) || 0
+    const newItem: Item = {
+      id: `new_${Date.now()}`,
+      name: editForm.name.trim(),
+      specification: editForm.specification.trim(),
+      unitPrice,
+      supplyValue: unitPrice,
+      quantity: 1,
+    }
+    
+    // 자주 사용하는 품목에 추가
+    const updatedFavorites = [newItem, ...displayFavorites]
+    setLocalFavorites(updatedFavorites)
+    saveFavoriteItems(updatedFavorites)
+    
+    // 선택된 품목으로 전달
+    onSelect(newItem)
+    setIsAddingNew(false)
+    setEditingItemId(null)
+    setEditForm({ name: '', specification: '', unitPrice: '' })
+    onClose()
+  }
+
   const handleCancelEdit = () => {
     setEditingItemId(null)
+    setIsAddingNew(false)
     setEditForm({ name: '', specification: '', unitPrice: '' })
   }
 
@@ -322,16 +371,60 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
             {isManageMode ? '자주 사용하는 품목 관리' : '자주 사용하는 품목'}
           </h2>
           <div className="flex items-center gap-2">
-            {isManageMode && (
+            {/* 품목 추가 버튼 */}
+            {!isManageMode && (
               <button
-                onClick={() => {
-                  setIsManageMode(false)
-                  setEditingItemId(null)
-                }}
-                className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                onClick={handleAddNew}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors text-sm font-medium"
               >
-                완료
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                <span>품목 추가</span>
               </button>
+            )}
+            {isManageMode && (
+              <>
+                <button
+                  onClick={handleAddNew}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors text-sm font-medium"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  <span>품목 추가</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsManageMode(false)
+                    setEditingItemId(null)
+                    setIsAddingNew(false)
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                >
+                  완료
+                </button>
+              </>
             )}
             <button
               onClick={onClose}
@@ -357,18 +450,72 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
 
         {/* Search Input */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <Input
-            placeholder="품목명 검색 (선택)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="품목명 검색 (선택)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1"
+            />
+          </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* 새 품목 추가 폼 */}
+          {isAddingNew && editingItemId === 'new' && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                새 품목 추가
+              </h3>
+              <div className="w-full p-[10px] bg-white dark:bg-gray-700 border border-blue-300 dark:border-blue-600 rounded-lg">
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    placeholder="품목명 *"
+                    className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    autoFocus
+                  />
+                  <input
+                    type="text"
+                    value={editForm.specification}
+                    onChange={(e) => setEditForm({ ...editForm, specification: e.target.value })}
+                    placeholder="규격 (선택)"
+                    className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  />
+                  <input
+                    type="text"
+                    value={editForm.unitPrice}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '')
+                      setEditForm({ ...editForm, unitPrice: value })
+                    }}
+                    placeholder="단가 (선택)"
+                    className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveNew}
+                      className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                    >
+                      추가
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="flex-1 px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 text-sm font-medium"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 최근 사용 섹션 */}
-          {filteredRecents.length > 0 && (
+          {filteredRecents.length > 0 && !isAddingNew && (
             <div>
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 최근 사용
@@ -393,13 +540,14 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
           )}
 
           {/* 자주 사용하는 품목 섹션 */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              자주 사용하는 품목
-            </h3>
-            {filteredFavorites.length > 0 ? (
-              <div className="space-y-2">
-                {filteredFavorites.map((item) => (
+          {!isAddingNew && (
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                자주 사용하는 품목
+              </h3>
+              {filteredFavorites.length > 0 ? (
+                <div className="space-y-2">
+                  {filteredFavorites.map((item) => (
                   editingItemId === item.id ? (
                     // 수정 모드
                     <div
@@ -514,24 +662,25 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
                       </div>
                     </div>
                   )
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                {debouncedQuery.trim()
-                  ? '검색 결과가 없어요.'
-                  : '아직 저장된 품목이 없어요.'}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  {debouncedQuery.trim()
+                    ? '검색 결과가 없어요.'
+                    : '아직 저장된 품목이 없어요.'}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 하단 고정 영역 */}
-        {!isManageMode && (
+        {!isManageMode && !isAddingNew && (
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setIsManageMode(true)}
-              className="w-full py-3 text-center text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-sm"
+              className="w-full py-2.5 text-center text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors text-xs"
             >
               ⚙ 자주 사용하는 품목 관리
             </button>

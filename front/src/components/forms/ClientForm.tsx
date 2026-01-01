@@ -7,9 +7,11 @@ interface ClientFormProps {
   client?: Client | null
   onSuccess: () => void
   onCancel: () => void
+  onCloseRequest?: (closeCallback: () => void) => void
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
-const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel }) => {
+const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel, onCloseRequest, onDirtyChange }) => {
   const isNew = !client
 
   const [form, setForm] = useState({
@@ -26,13 +28,14 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel }) 
     memo: '',
   })
 
+  const [originalForm, setOriginalForm] = useState(form)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!isNew && client) {
       // 기존 주소는 이미 합쳐진 형태이므로 address 필드에만 설정
       // UI에서는 주소와 상세주소를 분리해서 입력받지만, 저장 시에는 합쳐서 저장됨
-      setForm({
+      const initialForm = {
         businessNumber: client.businessNumber || '',
         companyName: client.companyName || '',
         ceoName: client.ceoName || '',
@@ -44,9 +47,38 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel }) 
         tel: '', // 거래처에는 전화번호 필드가 없으므로 빈 문자열
         hp: '', // 거래처에는 휴대폰번호 필드가 없으므로 빈 문자열
         memo: client.memo || '',
-      })
+      }
+      setForm(initialForm)
+      setOriginalForm(initialForm)
+    } else {
+      // 새로 생성하는 경우
+      const emptyForm = {
+        businessNumber: '',
+        companyName: '',
+        ceoName: '',
+        businessType: '',
+        businessItem: '',
+        address: '',
+        addressDetail: '',
+        email: '',
+        tel: '',
+        hp: '',
+        memo: '',
+      }
+      setForm(emptyForm)
+      setOriginalForm(emptyForm)
     }
   }, [client, isNew])
+
+  // isDirty 계산
+  const isDirty = JSON.stringify(form) !== JSON.stringify(originalForm)
+
+  // isDirty 상태 변경 시 상위 컴포넌트에 알림
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(isDirty)
+    }
+  }, [isDirty, onDirtyChange])
 
   const handleChange = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -102,6 +134,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel }) 
         alert('거래처 정보가 성공적으로 수정되었습니다.')
       }
 
+      // 성공 시 originalForm 업데이트
+      setOriginalForm(form)
       onSuccess()
     } catch (e: any) {
       console.error('거래처 저장 실패:', e)
@@ -112,8 +146,21 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel }) 
     }
   }
 
+  const handleCancel = () => {
+    if (onCloseRequest) {
+      onCloseRequest(onCancel)
+    } else {
+      onCancel()
+    }
+  }
+
   return (
-    <div className="space-y-4">
+    <div 
+      className="space-y-4"
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* 사업자등록증 안내 문구 */}
       <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-700 text-sm text-gray-700 dark:text-gray-300 rounded">
         사업자등록증과 동일한 정보를 입력해 주세요.
@@ -270,7 +317,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSuccess, onCancel }) 
       {/* 버튼 */}
       <div className="flex gap-3 pt-4">
         <button
-          onClick={onCancel}
+          onClick={handleCancel}
           disabled={loading}
           className="flex-1 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
