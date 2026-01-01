@@ -9,8 +9,7 @@ from app.core.config import settings
 if settings.database_url.startswith("sqlite"):
     engine = create_engine(
         settings.database_url,
-        # SQLite는 파일 기반이므로 connection pool 설정 최소화
-        connect_args={"check_same_thread": False},  # SQLite 전용
+        connect_args={"check_same_thread": False},
         echo=False,
         future=True,
     )
