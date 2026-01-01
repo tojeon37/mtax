@@ -301,24 +301,30 @@ export const InvoiceQuick: React.FC = () => {
           {/* 우리회사 버튼 */}
           <button
             onClick={() => setCompanyModalOpen(true)}
-            className="h-auto min-h-[56px] px-4 py-2.5 rounded-lg font-medium flex flex-col items-center justify-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all shadow-sm"
+            className="h-12 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-1.5 relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 shadow-sm"
           >
             <span className="text-sm font-semibold">우리회사</span>
             {currentCompany ? (
-              <span className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[120px] font-normal">
-                {currentCompany.name}
-              </span>
+              <>
+                <span className="text-gray-400 dark:text-gray-500">·</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[100px] font-normal">
+                  {currentCompany.name}
+                </span>
+              </>
             ) : (
-              <span className="text-xs text-gray-500 dark:text-gray-500 font-normal">
-                {isAuthenticated ? '회사 등록 필요' : '회사 정보 없음'}
-              </span>
+              <>
+                <span className="text-gray-400 dark:text-gray-500">·</span>
+                <span className="text-xs text-gray-500 dark:text-gray-500 font-normal">
+                  {isAuthenticated ? '등록 필요' : '정보 없음'}
+                </span>
+              </>
             )}
           </button>
 
           {/* 거래처 버튼 */}
           <button
             onClick={() => setCustomerModalOpen(true)}
-            className={`h-12 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 relative ${buyer
+            className={`h-12 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-1.5 relative ${buyer
               ? 'bg-blue-500 dark:bg-blue-600 text-white shadow-md hover:shadow-lg'
               : `bg-blue-500 dark:bg-blue-600 text-white shadow-md hover:shadow-lg ${showCustomerRing ? 'ring-2 ring-blue-300 dark:ring-blue-400' : ''}`
               }`}
@@ -329,12 +335,15 @@ export const InvoiceQuick: React.FC = () => {
             {buyer && (
               <span className="absolute top-1 right-1 text-white text-sm font-bold" aria-hidden="true">✓</span>
             )}
-            <span>거래처</span>
-            {buyer && (
-              <span className="text-xs truncate max-w-[100px] text-white">
-                {buyer.name}
-              </span>
-            )}
+            <span className="text-sm font-semibold">거래처</span>
+            {buyer ? (
+              <>
+                <span className="text-white/70">·</span>
+                <span className="text-xs truncate max-w-[100px] text-white font-normal">
+                  {buyer.name}
+                </span>
+              </>
+            ) : null}
           </button>
         </div>
 
