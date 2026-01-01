@@ -15,6 +15,7 @@ from app.models.tax_invoice_issue import TaxInvoiceIssue
 from app.models.session import UserSession
 from app.models.device_session import UserDeviceSession
 from app.models.corp_state_history import CorpStateHistory
+from app.models.favorite_item import FavoriteItem
 
 __all__ = [
     "User",
@@ -34,4 +35,5 @@ __all__ = [
     "UserSession",
     "UserDeviceSession",
     "CorpStateHistory",
+    "FavoriteItem",
 ]

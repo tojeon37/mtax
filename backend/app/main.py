@@ -46,6 +46,7 @@ def init_db_endpoint():
             device_session,
             corp_state_history,
             billing_charge,
+            favorite_item,
         )
 
         Base.metadata.create_all(bind=engine)

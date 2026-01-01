@@ -11,6 +11,7 @@ from app.api.v1 import (
     company,
     sessions,
     account,
+    favorite_item,
     usage,
     billing,
     payment,
@@ -40,3 +41,4 @@ api_router.include_router(payment.router, prefix="/payment", tags=["payment"])
 api_router.include_router(payment_method.router, prefix="/payment-methods", tags=["payment-methods"])
 api_router.include_router(free_quota.router, prefix="/free-quota", tags=["free-quota"])
 api_router.include_router(certificate.router, prefix="/certificate", tags=["certificate"])
+api_router.include_router(favorite_item.router, tags=["favorite-items"])

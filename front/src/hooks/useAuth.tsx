@@ -167,6 +167,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 로그아웃 시 회사 정보도 초기화
     const { setCurrentCompany } = useCompanyStore.getState()
     setCurrentCompany(null)
+    // 로그아웃 시 품목 관련 캐시는 유지 (마이그레이션 플래그는 유지)
+    // localStorage의 favorite_items는 마이그레이션 후에도 백업으로 유지
     navigate('/login')
   }
 

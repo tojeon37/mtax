@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Item } from '../../store/invoiceStore'
 import { Input } from '../ui/Input'
+import { useAuth } from '../../hooks/useAuth'
+import {
+  getFavoriteItems as getFavoriteItemsApi,
+  createFavoriteItem,
+  updateFavoriteItem,
+  deleteFavoriteItem,
+  migrateFavoriteItems,
+  FavoriteItem as ApiFavoriteItem,
+  FavoriteItemCreate,
+} from '../../api/favoriteItemApi'
 
 interface ItemPickerSheetProps {
   open: boolean
@@ -95,11 +105,12 @@ const DUMMY_RECENTS: Item[] = [
   },
 ]
 
-// localStorage 키
+// localStorage 키 (마이그레이션용)
 const RECENT_ITEMS_KEY = 'recent_items'
 const FAVORITE_ITEMS_KEY = 'favorite_items'
+const MIGRATION_FLAG_KEY = 'favorite_items_migrated'
 
-// 최근 사용 품목 저장
+// 최근 사용 품목 저장 (로컬 스토리지 - 임시 유지)
 export const saveRecentItem = (item: Item) => {
   try {
     const stored = localStorage.getItem(RECENT_ITEMS_KEY)
@@ -123,7 +134,7 @@ export const saveRecentItem = (item: Item) => {
   }
 }
 
-// 최근 사용 품목 불러오기
+// 최근 사용 품목 불러오기 (로컬 스토리지 - 임시 유지)
 export const getRecentItems = (): Item[] => {
   try {
     const stored = localStorage.getItem(RECENT_ITEMS_KEY)
@@ -134,25 +145,22 @@ export const getRecentItems = (): Item[] => {
   }
 }
 
-// 자주 사용하는 품목 저장
-export const saveFavoriteItems = (items: Item[]) => {
-  try {
-    localStorage.setItem(FAVORITE_ITEMS_KEY, JSON.stringify(items))
-  } catch (error) {
-    console.error('Failed to save favorite items:', error)
-  }
-}
+// API FavoriteItem을 Item 형식으로 변환
+const apiItemToItem = (apiItem: ApiFavoriteItem): Item => ({
+  id: apiItem.id.toString(),
+  name: apiItem.name,
+  specification: apiItem.specification || '',
+  unitPrice: apiItem.unitPrice,
+  supplyValue: apiItem.unitPrice,
+  quantity: 1,
+})
 
-// 자주 사용하는 품목 불러오기
-export const getFavoriteItems = (): Item[] => {
-  try {
-    const stored = localStorage.getItem(FAVORITE_ITEMS_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch (error) {
-    console.error('Failed to load favorite items:', error)
-    return []
-  }
-}
+// Item을 API FavoriteItemCreate 형식으로 변환
+const itemToApiCreate = (item: Item): FavoriteItemCreate => ({
+  name: item.name,
+  specification: item.specification || undefined,
+  unit_price: item.unitPrice || 0, // 백엔드는 snake_case
+})
 
 export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
   open,
@@ -162,6 +170,8 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
   onSelect,
   onAddNew,
 }) => {
+  const { isAuthenticated } = useAuth()
+  
   // 관리 모드 상태
   const [isManageMode, setIsManageMode] = useState(false)
   const [isAddingNew, setIsAddingNew] = useState(false)
@@ -172,24 +182,70 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
     unitPrice: '',
   })
   
-  // localStorage에서 자주 사용하는 품목 불러오기
+  // API에서 자주 사용하는 품목 불러오기
   const [localFavorites, setLocalFavorites] = useState<Item[]>([])
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false)
   
-  // localStorage에서 최근 사용 품목 불러오기
+  // localStorage에서 최근 사용 품목 불러오기 (임시 유지)
   const [localRecents, setLocalRecents] = useState<Item[]>([])
   
+  // 마이그레이션 실행 (최초 1회)
   useEffect(() => {
-    if (open) {
-      // 자주 사용하는 품목 불러오기
-      const storedFavorites = getFavoriteItems()
-      const mergedFavorites = favorites && favorites.length > 0 
-        ? favorites 
-        : storedFavorites.length > 0 
-          ? storedFavorites 
-          : DUMMY_FAVORITES
-      setLocalFavorites(mergedFavorites)
+    const migrateLocalStorageData = async () => {
+      if (!isAuthenticated) return
       
-      // 최근 사용 품목 불러오기
+      // 이미 마이그레이션했는지 확인
+      const migrated = localStorage.getItem(MIGRATION_FLAG_KEY)
+      if (migrated === 'true') return
+      
+      try {
+        // localStorage에서 기존 데이터 가져오기
+        const storedFavorites = localStorage.getItem(FAVORITE_ITEMS_KEY)
+        if (storedFavorites) {
+          const items: Item[] = JSON.parse(storedFavorites)
+          if (items.length > 0) {
+            // API 형식으로 변환하여 마이그레이션
+            const apiItems = items.map(itemToApiCreate)
+            await migrateFavoriteItems(apiItems)
+            
+            // 마이그레이션 완료 플래그 설정
+            localStorage.setItem(MIGRATION_FLAG_KEY, 'true')
+            console.log('품목 데이터 마이그레이션 완료:', items.length, '개')
+          }
+        }
+      } catch (error) {
+        console.error('품목 데이터 마이그레이션 실패:', error)
+      }
+    }
+    
+    migrateLocalStorageData()
+  }, [isAuthenticated])
+  
+  // 자주 사용하는 품목 로드
+  useEffect(() => {
+    const loadFavorites = async () => {
+      if (!open) return
+      
+      if (isAuthenticated) {
+        // 로그인된 경우 API에서 로드
+        setIsLoadingFavorites(true)
+        try {
+          const apiItems = await getFavoriteItemsApi()
+          const items = apiItems.map(apiItemToItem)
+          setLocalFavorites(items)
+        } catch (error) {
+          console.error('품목 로드 실패:', error)
+          // 에러 시 빈 배열 또는 더미 데이터
+          setLocalFavorites(favorites && favorites.length > 0 ? favorites : [])
+        } finally {
+          setIsLoadingFavorites(false)
+        }
+      } else {
+        // 비로그인 시 props로 전달된 favorites 사용 또는 빈 배열
+        setLocalFavorites(favorites && favorites.length > 0 ? favorites : [])
+      }
+      
+      // 최근 사용 품목은 로컬 스토리지에서 로드 (임시 유지)
       const storedRecents = getRecentItems()
       const mergedRecents = recents && recents.length > 0 
         ? [...recents, ...storedRecents.filter(r => !recents.some(rec => rec.name === r.name))]
@@ -204,7 +260,9 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
       setEditingItemId(null)
       setEditForm({ name: '', specification: '', unitPrice: '' })
     }
-  }, [open, favorites, recents])
+    
+    loadFavorites()
+  }, [open, isAuthenticated, favorites, recents])
   
   const displayFavorites = localFavorites
   const displayRecents = localRecents.length > 0 ? localRecents : DUMMY_RECENTS
@@ -262,31 +320,51 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
     })
   }
 
-  const handleSaveEdit = (itemId: string) => {
-    const updatedFavorites = displayFavorites.map(item => {
-      if (item.id === itemId) {
-        const unitPrice = Number(editForm.unitPrice.replace(/,/g, '')) || 0
-        return {
-          ...item,
+  const handleSaveEdit = async (itemId: string) => {
+    if (!isAuthenticated) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+    
+    try {
+      const unitPrice = Number(editForm.unitPrice.replace(/,/g, '')) || 0
+      
+      if (itemId === 'new') {
+        // 새 품목 추가는 handleSaveNew에서 처리
+        await handleSaveNew()
+        return
+      } else {
+        // 기존 품목 수정
+        const apiItem = await updateFavoriteItem(parseInt(itemId), {
           name: editForm.name.trim(),
-          specification: editForm.specification.trim(),
-          unitPrice,
-          supplyValue: unitPrice * (item.quantity || 1),
-        }
+          specification: editForm.specification.trim() || undefined,
+          unit_price: unitPrice,
+        })
+        
+        // 로컬 상태 업데이트
+        const updatedFavorites = localFavorites.map(item => {
+          if (item.id === itemId) {
+            return apiItemToItem(apiItem)
+          }
+          return item
+        })
+        setLocalFavorites(updatedFavorites)
+        setEditingItemId(null)
+        setIsAddingNew(false)
+        setEditForm({ name: '', specification: '', unitPrice: '' })
       }
-      return item
-    })
-    
-    setLocalFavorites(updatedFavorites)
-    saveFavoriteItems(updatedFavorites)
-    setEditingItemId(null)
-    setIsAddingNew(false)
-    setEditForm({ name: '', specification: '', unitPrice: '' })
-    
-    // TODO: 실제 API 연동 시 이 부분에서 API 호출
+    } catch (error: any) {
+      console.error('품목 저장 실패:', error)
+      alert(error.response?.data?.detail || '품목 저장에 실패했습니다.')
+    }
   }
 
   const handleAddNew = () => {
+    if (!isAuthenticated) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+    
     if (onAddNew) {
       // 외부에서 제공된 핸들러 사용
       onAddNew()
@@ -299,33 +377,40 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
     }
   }
 
-  const handleSaveNew = () => {
+  const handleSaveNew = async () => {
+    if (!isAuthenticated) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+    
     if (!editForm.name.trim()) {
       alert('품목명을 입력해주세요.')
       return
     }
     
-    const unitPrice = Number(editForm.unitPrice.replace(/,/g, '')) || 0
-    const newItem: Item = {
-      id: `new_${Date.now()}`,
-      name: editForm.name.trim(),
-      specification: editForm.specification.trim(),
-      unitPrice,
-      supplyValue: unitPrice,
-      quantity: 1,
+    try {
+      const unitPrice = Number(editForm.unitPrice.replace(/,/g, '')) || 0
+      const newApiItem = await createFavoriteItem({
+        name: editForm.name.trim(),
+        specification: editForm.specification.trim() || undefined,
+        unit_price: unitPrice,
+      })
+      
+      const newItem = apiItemToItem(newApiItem)
+      
+      // 로컬 상태 업데이트
+      setLocalFavorites([newItem, ...localFavorites])
+      
+      // 선택된 품목으로 전달
+      onSelect(newItem)
+      setIsAddingNew(false)
+      setEditingItemId(null)
+      setEditForm({ name: '', specification: '', unitPrice: '' })
+      onClose()
+    } catch (error: any) {
+      console.error('품목 추가 실패:', error)
+      alert(error.response?.data?.detail || '품목 추가에 실패했습니다.')
     }
-    
-    // 자주 사용하는 품목에 추가
-    const updatedFavorites = [newItem, ...displayFavorites]
-    setLocalFavorites(updatedFavorites)
-    saveFavoriteItems(updatedFavorites)
-    
-    // 선택된 품목으로 전달
-    onSelect(newItem)
-    setIsAddingNew(false)
-    setEditingItemId(null)
-    setEditForm({ name: '', specification: '', unitPrice: '' })
-    onClose()
   }
 
   const handleCancelEdit = () => {
@@ -334,14 +419,25 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
     setEditForm({ name: '', specification: '', unitPrice: '' })
   }
 
-  const handleDelete = (itemId: string, itemName: string, e: React.MouseEvent) => {
+  const handleDelete = async (itemId: string, itemName: string, e: React.MouseEvent) => {
     e.stopPropagation()
+    
+    if (!isAuthenticated) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+    
     if (window.confirm(`"${itemName}" 품목을 삭제할까요?`)) {
-      const updatedFavorites = displayFavorites.filter(item => item.id !== itemId)
-      setLocalFavorites(updatedFavorites)
-      saveFavoriteItems(updatedFavorites)
-      
-      // TODO: 실제 API 연동 시 이 부분에서 API 호출
+      try {
+        await deleteFavoriteItem(parseInt(itemId))
+        
+        // 로컬 상태 업데이트
+        const updatedFavorites = localFavorites.filter(item => item.id !== itemId)
+        setLocalFavorites(updatedFavorites)
+      } catch (error: any) {
+        console.error('품목 삭제 실패:', error)
+        alert(error.response?.data?.detail || '품목 삭제에 실패했습니다.')
+      }
     }
   }
 
