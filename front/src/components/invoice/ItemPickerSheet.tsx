@@ -169,7 +169,6 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
       
       if (isAuthenticated) {
         // 로그인된 경우 API에서 로드
-        setIsLoadingFavorites(true)
         try {
           const apiItems = await getFavoriteItemsApi()
           const items = apiItems.map(apiItemToItem)
@@ -179,7 +178,6 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
           // 에러 시 빈 배열 또는 더미 데이터
           setLocalFavorites(favorites && favorites.length > 0 ? favorites : [])
         } finally {
-          setIsLoadingFavorites(false)
         }
       } else {
         // 비로그인 시 props로 전달된 favorites 사용 또는 빈 배열
