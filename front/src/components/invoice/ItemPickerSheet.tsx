@@ -124,6 +124,17 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
     unitPrice: '',
   })
   
+  // 초기 폼 값 (isDirty 체크용)
+  const [initialForm, setInitialForm] = useState<{ name: string; specification: string; unitPrice: string }>({
+    name: '',
+    specification: '',
+    unitPrice: '',
+  })
+  
+  // 확인 모달 상태
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [pendingClose, setPendingClose] = useState<(() => void) | null>(null)
+  
   // API에서 자주 사용하는 품목 불러오기
   const [localFavorites, setLocalFavorites] = useState<Item[]>([])
   
@@ -197,7 +208,9 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
       setIsManageMode(false)
       setIsAddingNew(false)
       setEditingItemId(null)
-      setEditForm({ name: '', specification: '', unitPrice: '' })
+      const emptyForm = { name: '', specification: '', unitPrice: '' }
+      setEditForm(emptyForm)
+      setInitialForm(emptyForm)
     }
     
     loadFavorites()
@@ -252,11 +265,13 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
   const handleEdit = (item: Item, e: React.MouseEvent) => {
     e.stopPropagation()
     setEditingItemId(item.id)
-    setEditForm({
+    const initialValues = {
       name: item.name,
       specification: item.specification || '',
       unitPrice: item.unitPrice?.toString() || '',
-    })
+    }
+    setEditForm(initialValues)
+    setInitialForm(initialValues)
   }
 
   const handleSaveEdit = async (itemId: string) => {
@@ -290,7 +305,9 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
         setLocalFavorites(updatedFavorites)
         setEditingItemId(null)
         setIsAddingNew(false)
-        setEditForm({ name: '', specification: '', unitPrice: '' })
+        const emptyForm = { name: '', specification: '', unitPrice: '' }
+        setEditForm(emptyForm)
+        setInitialForm(emptyForm)
       }
     } catch (error: any) {
       console.error('품목 저장 실패:', error)
@@ -312,8 +329,49 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
       // 내부에서 새 품목 추가 모드로 전환
       setIsAddingNew(true)
       setEditingItemId('new')
-      setEditForm({ name: '', specification: '', unitPrice: '' })
+      const initialValues = { name: '', specification: '', unitPrice: '' }
+      setEditForm(initialValues)
+      setInitialForm(initialValues)
     }
+  }
+  
+  // isDirty 체크: 초기값과 현재값 비교
+  const isFormDirty = () => {
+    return (
+      editForm.name !== initialForm.name ||
+      editForm.specification !== initialForm.specification ||
+      editForm.unitPrice !== initialForm.unitPrice
+    )
+  }
+  
+  // 모달 닫기 요청 처리
+  const handleCloseRequest = (closeCallback: () => void) => {
+    const isInputMode = isAddingNew || editingItemId !== null
+    if (isInputMode && isFormDirty()) {
+      setPendingClose(() => closeCallback)
+      setShowConfirmModal(true)
+    } else {
+      closeCallback()
+    }
+  }
+  
+  // 확인 모달에서 닫기 확인
+  const handleConfirmClose = () => {
+    if (pendingClose) {
+      pendingClose()
+    }
+    setShowConfirmModal(false)
+    setPendingClose(null)
+    setIsAddingNew(false)
+    setEditingItemId(null)
+    setEditForm({ name: '', specification: '', unitPrice: '' })
+    setInitialForm({ name: '', specification: '', unitPrice: '' })
+  }
+  
+  // 확인 모달에서 취소
+  const handleCancelClose = () => {
+    setShowConfirmModal(false)
+    setPendingClose(null)
   }
 
   const handleSaveNew = async () => {
@@ -344,7 +402,9 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
       onSelect(newItem)
       setIsAddingNew(false)
       setEditingItemId(null)
-      setEditForm({ name: '', specification: '', unitPrice: '' })
+      const emptyForm = { name: '', specification: '', unitPrice: '' }
+      setEditForm(emptyForm)
+      setInitialForm(emptyForm)
       onClose()
     } catch (error: any) {
       console.error('품목 추가 실패:', error)
@@ -353,9 +413,12 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
   }
 
   const handleCancelEdit = () => {
-    setEditingItemId(null)
-    setIsAddingNew(false)
-    setEditForm({ name: '', specification: '', unitPrice: '' })
+    handleCloseRequest(() => {
+      setEditingItemId(null)
+      setIsAddingNew(false)
+      setEditForm({ name: '', specification: '', unitPrice: '' })
+      setInitialForm({ name: '', specification: '', unitPrice: '' })
+    })
   }
 
   const handleDelete = async (itemId: string, itemName: string, e: React.MouseEvent) => {
@@ -384,13 +447,74 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
     if (!price) return '0원'
     return `${price.toLocaleString('ko-KR')}원`
   }
+  
+  // ESC 키 처리
+  useEffect(() => {
+    if (!open) return
+    
+    const isInputMode = isAddingNew || editingItemId !== null
+    if (!isInputMode) return
+    
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleCloseRequest(() => {
+          setIsAddingNew(false)
+          setEditingItemId(null)
+          setEditForm({ name: '', specification: '', unitPrice: '' })
+          setInitialForm({ name: '', specification: '', unitPrice: '' })
+        })
+      }
+    }
+    
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [open, isAddingNew, editingItemId])
 
   if (!open) return null
+  
+  // 확인 모달
+  if (showConfirmModal) {
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="absolute inset-0 bg-black bg-opacity-50" />
+        <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full mx-4">
+          <div className="p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">확인</h2>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              입력 중인 내용이 있습니다. 정말 닫을까요?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelClose}
+                className="flex-1 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleConfirmClose}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold transition"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
+  const isInputMode = isAddingNew || editingItemId !== null
+  
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      onClick={onClose}
+      onClick={() => {
+        if (!isInputMode) {
+          onClose()
+        } else {
+          handleCloseRequest(onClose)
+        }
+      }}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black bg-opacity-50" />
@@ -462,7 +586,7 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
               </>
             )}
             <button
-              onClick={onClose}
+              onClick={() => handleCloseRequest(onClose)}
               className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               aria-label="닫기"
             >
@@ -503,7 +627,12 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 새 품목 추가
               </h3>
-              <div className="w-full p-[10px] bg-white dark:bg-gray-700 border border-blue-300 dark:border-blue-600 rounded-lg">
+              <div 
+                className="w-full p-[10px] bg-white dark:bg-gray-700 border border-blue-300 dark:border-blue-600 rounded-lg"
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="space-y-2">
                   <input
                     type="text"
@@ -588,6 +717,9 @@ export const ItemPickerSheet: React.FC<ItemPickerSheetProps> = ({
                     <div
                       key={item.id}
                       className="w-full p-[10px] bg-white dark:bg-gray-700 border border-blue-300 dark:border-blue-600 rounded-lg min-h-[52px]"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onMouseUp={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <div className="space-y-2">
                         <input
