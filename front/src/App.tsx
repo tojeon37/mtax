@@ -5,7 +5,6 @@ import { ThemeProvider } from './hooks/useTheme'
 import { TopBar } from './components/layout/TopBar'
 import { AppRouter } from './router'
 import { refreshAccessToken } from './api/tokenRefresh'
-import { useCompanyStore } from './store/useCompanyStore'
 import axios from 'axios'
 
 function App() {

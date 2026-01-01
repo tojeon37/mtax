@@ -35,7 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
-  const { loadCurrentCompany } = useCompanyStore()
 
   // 초기 로드 시 토큰 확인 및 사용자 정보 조회
   useEffect(() => {
