@@ -271,7 +271,7 @@ export const ItemInput: React.FC<ItemInputProps> = ({
             품목 #{index + 1}
           </span>
           <span className="text-gray-700 dark:text-gray-300 font-medium">
-            {item.name && !isOpen ? item.name : item.name || "입력 필요"}
+            {item.name && !isOpen ? item.name : item.name || "품목을 입력하세요"}
           </span>
           {item.supplyValue > 0 && !isOpen && (
             <span className="text-gray-500 dark:text-gray-400 text-sm">

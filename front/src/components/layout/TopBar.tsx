@@ -8,15 +8,10 @@ export const TopBar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
-  const { currentCompany, loadCurrentCompany } = useCompanyStore()
+  const { currentCompany } = useCompanyStore()
 
-  // 로그인 후 currentCompany가 없으면 자동으로 로드
-  useEffect(() => {
-    if (isAuthenticated && !currentCompany) {
-      console.log('[TopBar] currentCompany가 없어서 로드 시도')
-      loadCurrentCompany()
-    }
-  }, [isAuthenticated, currentCompany, loadCurrentCompany])
+  // TopBar에서는 회사 정보를 로드하지 않음
+  // 각 페이지에서 필요할 때만 로드하도록 변경
 
   // barobill_id에서 "회사_" 접두사 제거
   const getDisplayName = () => {

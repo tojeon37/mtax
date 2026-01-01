@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useEffect } from 'react'
 
 interface ModalBaseProps {
   isOpen: boolean
@@ -7,6 +7,8 @@ interface ModalBaseProps {
   children: ReactNode
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
   showCloseButton?: boolean
+  closeOnClickOutside?: boolean
+  closeOnEscape?: boolean
 }
 
 const maxWidthClasses = {
@@ -24,13 +26,35 @@ export const ModalBase: React.FC<ModalBaseProps> = ({
   children,
   maxWidth = 'full',
   showCloseButton = true,
+  closeOnClickOutside = true,
+  closeOnEscape = true,
 }) => {
+  // ESC 키 처리
+  useEffect(() => {
+    if (!isOpen || !closeOnEscape) return
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isOpen, closeOnEscape, onClose])
+
   if (!isOpen) return null
+
+  const handleBackdropClick = () => {
+    if (closeOnClickOutside) {
+      onClose()
+    }
+  }
 
   return (
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+      onClick={handleBackdropClick}
     >
       <div
         className={`bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] flex flex-col`}

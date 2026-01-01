@@ -29,7 +29,7 @@ class TaxInvoiceService:
 
     def get_tax_invoice(self, mgt_key: str) -> Dict[str, Any]:
         """
-        세금계산서 조회
+        세금계산서 조회 (조회용, 실제 HTTP 요청)
 
         Args:
             mgt_key: 관리번호
@@ -37,6 +37,12 @@ class TaxInvoiceService:
         Returns:
             세금계산서 정보
         """
+        # 조회용이지만 실제 HTTP 요청을 보내므로 검증 필요
+        if not settings.is_barobill_configured():
+            raise RuntimeError(
+                "바로빌 API 호출 실패: 바로빌 인증키가 설정되지 않았습니다."
+            )
+        
         try:
             result = self.client.service.GetTaxInvoice(
                 CERTKEY=self.cert_key,
@@ -57,7 +63,7 @@ class TaxInvoiceService:
 
     def get_tax_invoice_states(self, mgt_key_list: List[str]) -> List[Dict[str, Any]]:
         """
-        세금계산서 상태 조회 (복수)
+        세금계산서 상태 조회 (복수, 조회용, 실제 HTTP 요청)
 
         Args:
             mgt_key_list: 관리번호 리스트
@@ -65,6 +71,12 @@ class TaxInvoiceService:
         Returns:
             세금계산서 상태 리스트
         """
+        # 조회용이지만 실제 HTTP 요청을 보내므로 검증 필요
+        if not settings.is_barobill_configured():
+            raise RuntimeError(
+                "바로빌 API 호출 실패: 바로빌 인증키가 설정되지 않았습니다."
+            )
+        
         try:
             array_type = self.client.get_type("ns0:ArrayOfString")
             result = self.client.service.GetTaxInvoiceStatesEX(
@@ -91,7 +103,7 @@ class TaxInvoiceService:
         self, invoice_data: Dict[str, Any], issue_timing: int = 1
     ) -> str:
         """
-        세금계산서 등록
+        세금계산서 등록 (실제 HTTP 요청)
 
         Args:
             invoice_data: 세금계산서 데이터
@@ -100,6 +112,9 @@ class TaxInvoiceService:
         Returns:
             관리번호
         """
+        # 실제 바로빌 서버로 HTTP 요청을 보내므로 검증 필요
+        settings.validate_barobill()
+        
         try:
             # TaxInvoice 타입 생성
             tax_invoice = self._create_tax_invoice_object(invoice_data)
@@ -130,7 +145,7 @@ class TaxInvoiceService:
         bank_book_yn: bool = False,
     ) -> int:
         """
-        세금계산서 발행
+        세금계산서 발행 (실제 HTTP 요청)
 
         Args:
             mgt_key: 관리번호
@@ -144,6 +159,9 @@ class TaxInvoiceService:
         Returns:
             결과 코드 (양수: 성공, 음수: 실패)
         """
+        # 실제 바로빌 서버로 HTTP 요청을 보내므로 검증 필요
+        settings.validate_barobill()
+        
         try:
             result = self.client.service.IssueTaxInvoiceEx(
                 CERTKEY=self.cert_key,
@@ -167,7 +185,7 @@ class TaxInvoiceService:
 
     def delete_tax_invoice(self, mgt_key: str) -> int:
         """
-        세금계산서 삭제
+        세금계산서 삭제 (실제 HTTP 요청)
 
         Args:
             mgt_key: 관리번호
@@ -175,6 +193,9 @@ class TaxInvoiceService:
         Returns:
             결과 코드 (양수: 성공, 음수: 실패)
         """
+        # 실제 바로빌 서버로 HTTP 요청을 보내므로 검증 필요
+        settings.validate_barobill()
+        
         try:
             result = self.client.service.DeleteTaxInvoice(
                 CERTKEY=self.cert_key,

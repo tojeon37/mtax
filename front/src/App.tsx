@@ -9,16 +9,8 @@ import { useCompanyStore } from './store/useCompanyStore'
 import axios from 'axios'
 
 function App() {
-  const { loadCurrentCompany } = useCompanyStore()
-  
-  // 앱 시작 시 회사 정보 로드
-  useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      // 로그인된 상태면 회사 정보 로드
-      loadCurrentCompany()
-    }
-  }, [loadCurrentCompany])
+  // 앱 시작 시 불필요한 회사 정보 로드는 제거
+  // 회사 정보는 각 페이지에서 필요할 때만 로드하도록 변경
 
   // 앱 시작 시 refresh token으로 자동 로그인 시도
   useEffect(() => {

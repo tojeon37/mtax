@@ -22,29 +22,10 @@ export interface CompanyFormData {
 export const useCompanyForm = (company?: Company | null) => {
   const isNew = !company
 
-  const [form, setForm] = useState<CompanyFormData>({
-    businessNumber: '',
-    name: '',
-    ceoName: '',
-    bizType: '',
-    bizClass: '',
-    address: '',
-    addressDetail: '',
-    email: '',
-    tel: '',
-    hp: '',
-    memo: '',
-  })
-
-  const [loading, setLoading] = useState(false)
-  const [showPasswordModal, setShowPasswordModal] = useState(false)
-  const [passwordInput, setPasswordInput] = useState('')
-  const [pendingCompanyId, setPendingCompanyId] = useState<number | null>(null)
-
-  // 기존 회사 정보로 폼 초기화
-  useEffect(() => {
+  // 초기 폼 데이터
+  const getInitialForm = (): CompanyFormData => {
     if (!isNew && company) {
-      setForm({
+      return {
         businessNumber: company.businessNumber || '',
         name: company.name || '',
         ceoName: company.ceoName || '',
@@ -56,9 +37,40 @@ export const useCompanyForm = (company?: Company | null) => {
         tel: company.tel || '',
         hp: company.hp || '',
         memo: company.memo || '',
-      })
+      }
     }
+    return {
+      businessNumber: '',
+      name: '',
+      ceoName: '',
+      bizType: '',
+      bizClass: '',
+      address: '',
+      addressDetail: '',
+      email: '',
+      tel: '',
+      hp: '',
+      memo: '',
+    }
+  }
+
+  const [form, setForm] = useState<CompanyFormData>(getInitialForm())
+  const [initialForm, setInitialForm] = useState<CompanyFormData>(getInitialForm())
+
+  const [loading, setLoading] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordInput, setPasswordInput] = useState('')
+  const [pendingCompanyId, setPendingCompanyId] = useState<number | null>(null)
+
+  // 기존 회사 정보로 폼 초기화
+  useEffect(() => {
+    const initialData = getInitialForm()
+    setForm(initialData)
+    setInitialForm(initialData)
   }, [company, isNew])
+
+  // isDirty 계산: 초기값과 현재값 비교
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm)
 
   const handleChange = (key: keyof CompanyFormData, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -219,6 +231,11 @@ export const useCompanyForm = (company?: Company | null) => {
     handleSubmit,
     handlePasswordSubmit,
     handlePasswordCancel,
+    isDirty,
+    resetForm: () => {
+      setForm(getInitialForm())
+      setInitialForm(getInitialForm())
+    },
   }
 }
 

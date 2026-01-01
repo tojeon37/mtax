@@ -18,7 +18,7 @@ export const Login: React.FC = () => {
   // 이미 로그인되어 있으면 리다이렉트
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard', { replace: true })
+      navigate('/invoice/quick', { replace: true })
     }
   }, [isAuthenticated, navigate])
 
@@ -37,8 +37,8 @@ export const Login: React.FC = () => {
         username: data.username,
         password: data.password,
       })
-      // 로그인 성공 시 대시보드로 이동
-      navigate('/dashboard', { replace: true })
+      // 로그인 성공 시 바로 세금계산서 입력 페이지로 이동
+      navigate('/invoice/quick', { replace: true })
     } catch (err: any) {
       setError(formatError(err) || '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.')
     } finally {

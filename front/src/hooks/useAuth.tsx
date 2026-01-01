@@ -75,8 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 토큰이 있으면 사용자 정보 조회
         const userData = await getUserInfo()
         setUser(userData)
-        // 사용자 정보 로드 후 회사 정보도 로드
-        loadCurrentCompany()
+        // 회사 정보는 각 페이지에서 필요할 때만 로드하도록 변경
       } catch (error: any) {
         // 네트워크 에러(서버 미실행)는 조용히 처리
         if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED' || error.message?.includes('ERR_CONNECTION_REFUSED')) {
@@ -152,8 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('사용자 정보 조회 완료:', userData)
       }
     
-      // 회원가입 후 회사 정보 로드
-      loadCurrentCompany()
+      // 회사 정보는 각 페이지에서 필요할 때만 로드하도록 변경
       console.log('회원가입 완료')
     } catch (error: any) {
       console.error('register 함수에서 에러 발생:', error)

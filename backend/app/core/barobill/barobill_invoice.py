@@ -18,12 +18,6 @@ class BaroBillInvoiceService(BaroBillService):
             사업자 상태 정보 딕셔너리
         """
         try:
-            # 인증키 확인
-            if not self.client.cert_key or not self.client.corp_num:
-                raise Exception(
-                    "바로빌 API 인증키 또는 사업자번호가 설정되지 않았습니다."
-                )
-
             result = self.client.get_corp_state_client().service.GetCorpStateEx(
                 CERTKEY=self.client.cert_key,
                 CorpNum=self.client.corp_num,

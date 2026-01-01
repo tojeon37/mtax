@@ -35,7 +35,7 @@ export const InvoiceQuick: React.FC = () => {
     setExpandedItemId,
   } = useInvoiceStore()
 
-  const { currentCompany, setCurrentCompany } = useCompanyStore()
+  const { currentCompany, setCurrentCompany, loadCurrentCompany } = useCompanyStore()
   const { isAuthenticated } = useAuth()
 
   const { handleIssue, isIssuing } = useBarobillInvoice()
@@ -46,6 +46,18 @@ export const InvoiceQuick: React.FC = () => {
   const [showCustomerRing, setShowCustomerRing] = useState(true)
   const [isCustomerModalOpen, setCustomerModalOpen] = useState(false)
   const [isCompanyModalOpen, setCompanyModalOpen] = useState(false)
+
+  // 최초 진입 시 회사 존재 여부만 확인 (지연 로딩)
+  // 로그인된 상태이고 회사 정보가 없을 때만 확인
+  useEffect(() => {
+    if (isAuthenticated && !currentCompany) {
+      // 비동기로 로드하되, 로딩 상태를 표시하지 않음
+      loadCurrentCompany().catch(() => {
+        // 에러 발생 시 무시 (회사 정보가 없는 상태로 처리)
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]) // currentCompany, loadCurrentCompany는 의존성에서 제외하여 무한 루프 방지
 
   // 인증서 등록 플로우 상태
   const [showGuideModal, setShowGuideModal] = useState(false)
@@ -107,6 +119,8 @@ export const InvoiceQuick: React.FC = () => {
   // 회사 선택 핸들러
   const handleSelectCompany = (company: Company) => {
     setCurrentCompany(company)
+    // 회사 선택 후 모달 닫기
+    setCompanyModalOpen(false)
   }
 
   // 옵션 변경을 위한 로컬 상태
@@ -131,10 +145,12 @@ export const InvoiceQuick: React.FC = () => {
       return
     }
 
-    // 우리회사 정보 체크
+    // 우리회사 정보 체크 - 발행 시점에만 확인
     if (!currentCompany) {
-      alert('우리회사 정보를 먼저 등록해주세요.')
-      setCompanyModalOpen(true)
+      const shouldRegister = confirm('우리회사 정보가 등록되지 않았습니다.\n회사 등록 모달을 열까요?')
+      if (shouldRegister) {
+        setCompanyModalOpen(true)
+      }
       return
     }
 
@@ -285,13 +301,16 @@ export const InvoiceQuick: React.FC = () => {
           {/* 우리회사 버튼 */}
           <button
             onClick={() => setCompanyModalOpen(true)}
-            className="h-12 px-4 rounded-lg font-medium flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-default"
+            className="h-auto min-h-[56px] px-4 py-2.5 rounded-lg font-medium flex flex-col items-center justify-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all shadow-sm"
           >
-            <span aria-hidden="true">🔒</span>
-            <span>우리회사</span>
-            {currentCompany && (
-              <span className="text-xs truncate max-w-[100px]">
+            <span className="text-sm font-semibold">우리회사</span>
+            {currentCompany ? (
+              <span className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[120px] font-normal">
                 {currentCompany.name}
+              </span>
+            ) : (
+              <span className="text-xs text-gray-500 dark:text-gray-500 font-normal">
+                {isAuthenticated ? '회사 등록 필요' : '회사 정보 없음'}
               </span>
             )}
           </button>
@@ -319,11 +338,6 @@ export const InvoiceQuick: React.FC = () => {
           </button>
         </div>
 
-        {currentCompany && isAuthenticated && (
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
-            현재 발행 사업자: {currentCompany.name} ({currentCompany.businessNumber})
-          </p>
-        )}
 
         {/* 품목 입력 */}
         <div className="space-y-4">

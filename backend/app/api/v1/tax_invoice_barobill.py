@@ -44,16 +44,13 @@ def get_tax_invoice_service() -> TaxInvoiceService:
 
 def get_barobill_service() -> BaroBillInvoiceService:
     """바로빌 서비스 의존성"""
+    # 실제 바로빌 서버로 HTTP 요청을 보내므로 검증 필요
+    settings.validate_barobill()
+    
     # 안전하게 속성 접근 (속성이 없으면 기본값 사용)
     cert_key = getattr(settings, "BAROBILL_CERT_KEY", None)
     corp_num = getattr(settings, "BAROBILL_CORP_NUM", None)
     use_test_server = getattr(settings, "BAROBILL_USE_TEST_SERVER", False)
-
-    if not cert_key or not corp_num:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="바로빌 API 인증키가 설정되지 않았습니다.",
-        )
 
     return BaroBillInvoiceService(
         cert_key=cert_key, corp_num=corp_num, use_test_server=use_test_server

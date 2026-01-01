@@ -29,6 +29,7 @@ import { ProtectedRoute } from '../components/auth/ProtectedRoute'
 export const AppRouter = () => {
   return (
     <Routes>
+      {/* 대시보드는 설정 페이지에서만 접근 가능하도록 변경 */}
       <Route
         path="/dashboard"
         element={
@@ -37,6 +38,7 @@ export const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+      {/* 메인 페이지는 바로 세금계산서 입력 페이지 */}
       <Route path="/" element={<InvoiceQuick />} />
       <Route path="/invoice" element={<InvoiceQuick />} />
       <Route path="/invoice/quick" element={<InvoiceQuick />} />

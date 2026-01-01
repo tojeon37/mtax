@@ -26,6 +26,9 @@ export const CompanySelectModal: React.FC<CompanySelectModalProps> = ({
   const [showForm, setShowForm] = useState(false)
   const [editingCompany, setEditingCompany] = useState<Company | null>(null)
   const [showMenu, setShowMenu] = useState<number | null>(null)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [pendingClose, setPendingClose] = useState<(() => void) | null>(null)
+  const [formIsDirty, setFormIsDirty] = useState(false)
   const { setCurrentCompany } = useCompanyStore()
 
   useEffect(() => {
@@ -90,6 +93,7 @@ export const CompanySelectModal: React.FC<CompanySelectModalProps> = ({
       return
     }
     
+    setFormIsDirty(false)
     setEditingCompany(company)
     setShowForm(true)
     setShowMenu(null)
@@ -116,6 +120,7 @@ export const CompanySelectModal: React.FC<CompanySelectModalProps> = ({
       return
     }
     
+    setFormIsDirty(false)
     setEditingCompany(null)
     setShowForm(true)
     if (onAddNew) {
@@ -123,13 +128,42 @@ export const CompanySelectModal: React.FC<CompanySelectModalProps> = ({
     }
   }
 
-  const handleFormClose = () => {
+  const handleFormCloseRequest = (closeCallback: () => void) => {
+    // isDirty 상태일 때만 확인 모달 표시
+    if (formIsDirty) {
+      setPendingClose(() => closeCallback)
+      setShowConfirmModal(true)
+    } else {
+      closeCallback()
+    }
+  }
+
+  const handleConfirmClose = () => {
+    if (pendingClose) {
+      pendingClose()
+    }
+    setShowConfirmModal(false)
+    setPendingClose(null)
     setShowForm(false)
     setEditingCompany(null)
     loadCompanies()
   }
 
+  const handleCancelClose = () => {
+    setShowConfirmModal(false)
+    setPendingClose(null)
+  }
+
+
   const handleFormSuccess = () => {
+    setFormIsDirty(false)
+    setShowForm(false)
+    setEditingCompany(null)
+    loadCompanies()
+  }
+
+  const handleFormClose = () => {
+    setFormIsDirty(false)
     setShowForm(false)
     setEditingCompany(null)
     loadCompanies()
@@ -137,20 +171,59 @@ export const CompanySelectModal: React.FC<CompanySelectModalProps> = ({
 
   if (!isOpen) return null
 
+  // 확인 모달
+  if (showConfirmModal) {
+    return (
+      <ModalBase
+        isOpen={showConfirmModal}
+        onClose={handleCancelClose}
+        title="확인"
+        maxWidth="sm"
+        closeOnClickOutside={false}
+        closeOnEscape={false}
+      >
+        <div className="p-6">
+          <p className="text-gray-700 dark:text-gray-300 mb-6">
+            입력 중인 내용이 있습니다. 정말 닫을까요?
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleCancelClose}
+              className="flex-1 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleConfirmClose}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold transition"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      </ModalBase>
+    )
+  }
+
   // 폼 모드
   if (showForm) {
     return (
       <ModalBase
         isOpen={isOpen}
-        onClose={handleFormClose}
+        onClose={() => handleFormCloseRequest(handleFormClose)}
         title={editingCompany ? '회사 정보 수정' : '새 회사 등록'}
         maxWidth="full"
+        closeOnClickOutside={false}
+        closeOnEscape={false}
       >
-        <div className="p-6">
+        <div className="p-6" onMouseDown={(e) => e.stopPropagation()} onMouseUp={(e) => e.stopPropagation()}>
           <CompanyForm
             company={editingCompany}
             onSuccess={handleFormSuccess}
-            onCancel={handleFormClose}
+            onCancel={() => handleFormCloseRequest(handleFormClose)}
+            onDirtyChange={(isDirty) => {
+              setFormIsDirty(isDirty)
+            }}
           />
         </div>
       </ModalBase>

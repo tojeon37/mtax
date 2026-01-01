@@ -10,9 +10,10 @@ interface CompanyFormProps {
   company?: Company | null
   onSuccess: () => void
   onCancel: () => void
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
-const CompanyForm: React.FC<CompanyFormProps> = ({ company, onSuccess, onCancel }) => {
+const CompanyForm: React.FC<CompanyFormProps> = ({ company, onSuccess, onCancel, onDirtyChange }) => {
   const {
     form,
     loading,
@@ -23,7 +24,15 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ company, onSuccess, onCancel 
     handleSubmit: submitForm,
     handlePasswordSubmit,
     handlePasswordCancel,
+    isDirty,
   } = useCompanyForm(company)
+
+  // isDirty 상태 변경 시 상위 컴포넌트에 알림
+  React.useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(isDirty)
+    }
+  }, [isDirty, onDirtyChange])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -103,7 +112,12 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ company, onSuccess, onCancel 
         </div>
       </ModalBase>
 
-      <div className="space-y-4">
+      <div 
+        className="space-y-4"
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
       {/* 바로빌 연동 안내 문구 */}
       <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-4">
         <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">

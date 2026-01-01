@@ -18,13 +18,14 @@ class CompanyService:
         Returns:
             BaroBillMemberService 인스턴스 또는 None
         """
+        # 바로빌 API 호출 전 필수 설정 검증
+        settings.validate_barobill()
+        
         # 안전하게 속성 접근 (속성이 없으면 None 반환)
         cert_key = getattr(settings, "BAROBILL_CERT_KEY", None)
         corp_num = getattr(settings, "BAROBILL_CORP_NUM", None)
         use_test_server = getattr(settings, "BAROBILL_USE_TEST_SERVER", False)
 
-        if not cert_key or not corp_num:
-            return None
         return BaroBillMemberService(
             cert_key=cert_key, corp_num=corp_num, use_test_server=use_test_server
         )
@@ -34,7 +35,7 @@ class CompanyService:
         barobill_service: BaroBillMemberService, business_no: str
     ) -> Tuple[bool, Optional[str]]:
         """
-        바로빌에 회원이 이미 등록되어 있는지 확인
+        바로빌에 회원이 이미 등록되어 있는지 확인 (조회용)
 
         Args:
             barobill_service: BaroBillMemberService 인스턴스
@@ -43,6 +44,10 @@ class CompanyService:
         Returns:
             (회원 존재 여부, 에러 메시지)
         """
+        # 조회용 함수이므로 is_barobill_configured()로 분기 처리
+        if not settings.is_barobill_configured():
+            return False, None
+        
         try:
             corp_num_clean = business_no.replace("-", "").strip()
             if not corp_num_clean or len(corp_num_clean) != 10:
@@ -65,7 +70,7 @@ class CompanyService:
         barobill_service: BaroBillMemberService, user_data: dict
     ) -> Tuple[bool, Optional[str]]:
         """
-        바로빌 회원사 가입 또는 정보 업데이트
+        바로빌 회원사 가입 또는 정보 업데이트 (실제 HTTP 요청)
 
         Args:
             barobill_service: BaroBillService 인스턴스
@@ -74,6 +79,9 @@ class CompanyService:
         Returns:
             (성공 여부, 에러 메시지)
         """
+        # 실제 바로빌 서버로 HTTP 요청을 보내므로 검증 필요
+        settings.validate_barobill()
+        
         if (
             not user_data.get("business_no")
             or not user_data.get("company_name")

@@ -20,12 +20,6 @@ class BaroBillAuthService(BaroBillService):
             인증서 유효성 확인 결과 딕셔너리
         """
         try:
-            # 인증키 확인
-            if not self.client.cert_key or not self.client.corp_num:
-                raise Exception(
-                    "바로빌 API 인증키 또는 사업자번호가 설정되지 않았습니다."
-                )
-
             result = self.client.get_common_client().service.CheckCERTIsValid(
                 CERTKEY=self.client.cert_key,
                 CorpNum=self.client.corp_num,
@@ -72,12 +66,6 @@ class BaroBillAuthService(BaroBillService):
             인증서 등록 URL 딕셔너리
         """
         try:
-            # 인증키 확인
-            if not self.client.cert_key or not self.client.corp_num:
-                raise Exception(
-                    "바로빌 API 인증키 또는 사업자번호가 설정되지 않았습니다."
-                )
-
             result = self.client.get_common_client().service.GetCertificateRegistURL(
                 CERTKEY=self.client.cert_key,
                 CorpNum=self.client.corp_num,
