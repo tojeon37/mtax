@@ -64,7 +64,7 @@ export const InvoiceQuick: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showCertificateRegistrationModal, setShowCertificateRegistrationModal] = useState(false)
   const [isCheckingCertificate, setIsCheckingCertificate] = useState(false)
-  const [certificateStatus, setCertificateStatus] = useState<{certificate_registered: boolean; can_issue_invoice: boolean} | null>(null)
+  const [certificateStatus, setCertificateStatus] = useState<{ certificate_registered: boolean; can_issue_invoice: boolean } | undefined>(undefined)
 
   // 첫 번째 품목이 있으면 자동으로 펼치기
   useEffect(() => {
@@ -99,7 +99,7 @@ export const InvoiceQuick: React.FC = () => {
     removeItem(itemId)
     if (expandedItemId === itemId && items.length > 1) {
       const remainingItems = items.filter(i => i.id !== itemId)
-      setExpandedItemId(remainingItems[0]?.id || undefined)
+      setExpandedItemId(remainingItems[0]?.id || null)
     }
   }
 
@@ -110,8 +110,8 @@ export const InvoiceQuick: React.FC = () => {
       name: client.companyName,
       businessNumber: client.businessNumber,
       ceoName: client.ceoName,
-      address: client.address,
-      email: client.email,
+      address: client.address || undefined,
+      email: client.email || undefined,
       businessType: client.businessType,
       businessItem: client.businessItem,
     })
@@ -207,7 +207,7 @@ export const InvoiceQuick: React.FC = () => {
   // 인증서 등록 시작 버튼 클릭 시
   const handleStartCertificateRegistration = () => {
     setShowGuideModal(false)
-    
+
     // 인증서 등록 페이지로 이동 (새 창)
     // 사용자가 명시적으로 버튼을 클릭했을 때만 실행되므로 팝업 차단 없음
     const registrationUrl = 'https://www.barobill.co.kr/join/login.asp?AURL=%2Fcert%2Fc%5Fcert%2Easp%3F'
@@ -374,7 +374,7 @@ export const InvoiceQuick: React.FC = () => {
               item={item}
               index={index}
               isExpanded={expandedItemId === item.id}
-              onToggle={() => setExpandedItemId(expandedItemId === item.id ? undefined : item.id)}
+              onToggle={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
               onUpdate={(updates) => updateItem(item.id, updates)}
               onRemove={() => handleRemoveItem(item.id)}
               canRemove={items.length > 1}
