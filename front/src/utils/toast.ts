@@ -1,4 +1,7 @@
-import { ToastMessage, ToastType } from '../components/common/Toast'
+import { ToastMessage as ToastMessageType, ToastType } from '../components/common/Toast'
+
+// ToastMessage 타입을 export
+export type ToastMessage = ToastMessageType
 
 let toastListeners: Array<(toasts: ToastMessage[]) => void> = []
 let toasts: ToastMessage[] = []

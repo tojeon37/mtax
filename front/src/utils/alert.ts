@@ -14,9 +14,6 @@ export const customAlert = (message: string, type: 'success' | 'error' | 'info' 
  * 주의: 이 함수는 앱 초기화 시 한 번만 호출해야 합니다.
  */
 export const overrideGlobalAlert = () => {
-  // 기존 alert 함수 백업 (필요시 사용)
-  const originalAlert = window.alert
-
   // 커스텀 alert로 교체
   window.alert = (message: string) => {
     // 메시지에서 개행 문자를 처리

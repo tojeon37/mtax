@@ -28,19 +28,6 @@ const CertificatePage: React.FC = () => {
     }
   }
 
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return ''
-    try {
-      const date = new Date(dateString)
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      return `${year}-${month}-${day}`
-    } catch {
-      return dateString
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 py-6 pt-24 pb-8">
       {/* 전체 컨테이너: 최소 높이 전체 화면, 배경색, 패딩, 상단 여백(헤더 공간) */}

@@ -99,7 +99,7 @@ export const InvoiceQuick: React.FC = () => {
     removeItem(itemId)
     if (expandedItemId === itemId && items.length > 1) {
       const remainingItems = items.filter(i => i.id !== itemId)
-      setExpandedItemId(remainingItems[0]?.id || null)
+      setExpandedItemId(remainingItems[0]?.id || undefined)
     }
   }
 
@@ -374,7 +374,7 @@ export const InvoiceQuick: React.FC = () => {
               item={item}
               index={index}
               isExpanded={expandedItemId === item.id}
-              onToggle={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
+              onToggle={() => setExpandedItemId(expandedItemId === item.id ? undefined : item.id)}
               onUpdate={(updates) => updateItem(item.id, updates)}
               onRemove={() => handleRemoveItem(item.id)}
               canRemove={items.length > 1}
