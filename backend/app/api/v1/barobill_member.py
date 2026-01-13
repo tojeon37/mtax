@@ -313,7 +313,7 @@ def auto_link_barobill(
 
             # result_code에 따라 메시지 결정
             if result_code == -32000:
-                message = "이미 바로빌에 등록된 사업자입니다. 기존 정보로 연동을 완료했습니다."
+                message = "바로빌 연동이 완료되었습니다."
             else:
                 message = "바로빌 연동이 완료되었습니다."
 

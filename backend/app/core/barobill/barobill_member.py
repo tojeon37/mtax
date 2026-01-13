@@ -166,11 +166,9 @@ class BaroBillMemberService(BaroBillService):
 
             # result_code에 따라 메시지 결정
             if result == -32000:
-                message = (
-                    "이미 바로빌에 등록된 사업자입니다. 기존 정보로 연동을 계속합니다."
-                )
+                message = "바로빌 연동이 완료되었습니다."
             else:
-                message = "바로빌 회원사 가입이 완료되었습니다."
+                message = "바로빌 연동이 완료되었습니다."
 
             return {
                 "success": True,

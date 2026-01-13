@@ -40,6 +40,9 @@ class CompanyResponse(CompanyBase):
     """회사 응답 스키마"""
     id: int
     user_id: int
+    barobill_linked: bool = False
+    barobill_linked_at: Optional[datetime] = None
+    barobill_linked_reason: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     

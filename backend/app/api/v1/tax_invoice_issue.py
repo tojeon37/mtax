@@ -5,6 +5,7 @@ from datetime import date, datetime
 import json
 from app.db.session import get_db
 from app.models.user import User
+from app.models.company import Company
 from app.crud.usage import record_usage_log
 from app.models.usage_log import UsageType
 from app.models.tax_invoice_issue import TaxInvoiceIssue
@@ -12,8 +13,14 @@ from pydantic import BaseModel
 from app.api.v1.auth import get_current_user
 from app.schemas.tax_invoice_barobill import TaxInvoiceCreate
 from app.services.tax_invoice import TaxInvoiceService
+from app.services.corp_state_service import calculate_free_invoice_remaining
+from app.core.barobill.barobill_auth import BaroBillAuthService
+from app.core.config import settings
 
 router = APIRouter(prefix="/barobill/tax-invoices", tags=["barobill-tax-invoices"])
+
+# 무료 발행 기본 제공 수량 상수
+FREE_INVOICE_QUOTA = 5
 
 
 @router.post("/issue", response_model=dict, status_code=status.HTTP_201_CREATED)
@@ -28,11 +35,41 @@ def issue_tax_invoice(
     로그인한 사용자의 바로빌 인증키로 세금계산서를 발행합니다.
     발행 시 사용 내역을 기록합니다.
     """
-    # 바로빌 연동 확인
-    if not current_user.barobill_linked or not current_user.barobill_cert_key:
+    # 발행자 사업자번호로 회사 정보 조회
+    invoicer_corp_num = invoice.InvoicerParty.CorpNum.replace("-", "").strip()
+    
+    # 회사 정보 조회 (사용자별로 사업자번호로 조회)
+    # 모든 회사를 조회한 후 Python에서 비교 (SQL 함수 사용 대신)
+    companies = (
+        db.query(Company)
+        .filter(Company.user_id == current_user.id)
+        .all()
+    )
+    
+    company = None
+    for c in companies:
+        if c.business_number.replace("-", "").strip() == invoicer_corp_num:
+            company = c
+            break
+    
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="회사 정보를 찾을 수 없습니다. 먼저 회사 정보를 저장해주세요."
+        )
+    
+    # 바로빌 연동 확인 (회사 정보 기준)
+    if not company.barobill_linked:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="바로빌 연동이 필요합니다. 먼저 바로빌 회원사 가입을 완료해주세요."
+            detail="바로빌 연동이 완료되지 않았습니다. 회사 정보를 확인해주세요."
+        )
+    
+    # 사용자 인증키 확인 (발행에 필요)
+    if not current_user.barobill_cert_key:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="바로빌 인증키가 등록되지 않았습니다."
         )
     
     if not current_user.barobill_corp_num:
@@ -41,8 +78,37 @@ def issue_tax_invoice(
             detail="사업자번호가 등록되지 않았습니다."
         )
     
-    # 무료 제공 건수 확인 및 결제수단 확인
-    if current_user.free_invoice_remaining > 0:
+    # 인증서 등록 상태 확인 (발행 전 필수)
+    try:
+        auth_service = BaroBillAuthService(
+            cert_key=current_user.barobill_cert_key,
+            corp_num=current_user.barobill_corp_num.replace("-", "").strip(),
+            use_test_server=getattr(settings, "BAROBILL_USE_TEST_SERVER", False)
+        )
+        cert_status = auth_service.get_certificate_status()
+        
+        if not cert_status["certificate_registered"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"인증서가 등록되지 않았습니다. {cert_status['status_message']}"
+            )
+        
+        if not cert_status["can_issue_invoice"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"세금계산서 발행이 불가능합니다. {cert_status['status_message']}"
+            )
+    except HTTPException:
+        raise
+    except Exception as cert_error:
+        # 인증서 확인 실패 시에도 발행 시도 (바로빌 API에서 추가 검증)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"인증서 상태 확인 실패: {str(cert_error)}")
+    
+    # 무료 제공 건수 확인 및 결제수단 확인 (발행 API에서만 적용)
+    free_invoice_remaining = calculate_free_invoice_remaining(db, current_user.id)
+    if free_invoice_remaining > 0:
         # 무료 제공 건수가 있으면 정상 발행 처리
         pass
     else:
@@ -129,13 +195,17 @@ def issue_tax_invoice(
                 force_issue=True
             )
             
-            # 발행 성공 시에만 무료 제공 건수 차감 또는 과금 처리
+            # 발행 성공 시에만 과금 처리
             if result > 0:  # 발행 성공
-                # 무료 제공 건수 차감 또는 과금 처리
-                if current_user.free_invoice_remaining > 0:
-                    # 무료 제공 건수 차감
-                    current_user.free_invoice_remaining -= 1
-                else:
+                # 발행 성공 후 현재 사용량 확인 (TaxInvoiceIssue 저장 전이므로 +1 해서 계산)
+                # TaxInvoiceIssue는 아래에서 저장되므로, 저장 전 현재 상태를 기준으로 판단
+                current_used_count = db.query(TaxInvoiceIssue).filter(
+                    TaxInvoiceIssue.user_id == current_user.id,
+                    TaxInvoiceIssue.barobill_result_code > 0
+                ).count()
+                
+                # 무료 제공 건수(5건)를 초과한 경우 과금 처리
+                if current_used_count >= FREE_INVOICE_QUOTA:
                     # 결제수단이 등록된 경우 과금 처리
                     if current_user.has_payment_method:
                         # 사용 내역 기록 (후불 청구)
@@ -153,9 +223,6 @@ def issue_tax_invoice(
                             amount=200  # 계산서 발행 건당 200원
                         )
                         db.add(charge)
-                
-                # 사용자 정보 업데이트 저장
-                db.add(current_user)
             
             # 발행 정보를 DB에 저장 (5년 보관)
             write_date_str = invoice_data.get('WriteDate', '')

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.session import Base
@@ -20,6 +20,12 @@ class Company(Base):
     tel = Column(String(50))  # 전화번호
     hp = Column(String(50))  # 휴대폰번호
     memo = Column(String(1000))  # 비고
+    
+    # 바로빌 연동 정보
+    barobill_linked = Column(Boolean, default=False)  # 바로빌 연동 여부
+    barobill_linked_at = Column(DateTime(timezone=True), nullable=True)  # 연동 일시
+    barobill_linked_reason = Column(String(500), nullable=True)  # 연동 성공/실패 사유
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
