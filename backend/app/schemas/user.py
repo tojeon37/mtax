@@ -64,7 +64,9 @@ class UserResponse(BaseModel):
     barobill_cert_key: Optional[str] = None
     barobill_linked: Optional[bool] = False
     barobill_linked_at: Optional[datetime] = None
-    free_invoice_remaining: int = 5
+    free_invoice_quota: Optional[int] = None  # 무료 발행 기본 제공 수량
+    free_invoice_used: Optional[int] = None  # 사용된 무료 발행 건수
+    free_invoice_remaining: int = 5  # 잔여 무료 발행 건수
     has_payment_method: bool = False
     created_at: datetime
     updated_at: Optional[datetime] = None

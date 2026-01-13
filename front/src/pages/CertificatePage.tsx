@@ -20,8 +20,8 @@ const CertificatePage: React.FC = () => {
       console.error('인증서 상태 조회 실패:', error)
       setStatus({
         certificate_registered: false,
-        expire_date: null,
-        message: '인증서 상태를 확인할 수 없습니다.'
+        certificate_status_message: '인증서 상태를 확인할 수 없습니다.',
+        can_issue_invoice: false,
       })
     } finally {
       setIsLoading(false)
@@ -71,14 +71,15 @@ const CertificatePage: React.FC = () => {
             ) : status?.certificate_registered ? (
               <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700 rounded mb-4">
                 <p className="font-semibold mb-1">인증서가 등록되어 있습니다.</p>
-                {status.expire_date && (
-                  <p className="text-sm">만료일: {formatDate(status.expire_date)}</p>
+                <p className="text-sm mt-1">{status.certificate_status_message}</p>
+                {status.can_issue_invoice && (
+                  <p className="text-sm mt-1 text-green-600 dark:text-green-400">✓ 세금계산서 발행 가능</p>
                 )}
               </div>
             ) : (
               <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700 rounded mb-4">
                 <p className="font-semibold mb-1">인증서가 등록되어 있지 않습니다.</p>
-                <p className="text-sm mt-1">전자세금계산서 발행을 위해 공동인증서 등록이 필요합니다.</p>
+                <p className="text-sm mt-1">{status?.certificate_status_message || '전자세금계산서 발행을 위해 공동인증서 등록이 필요합니다.'}</p>
               </div>
             )}
 

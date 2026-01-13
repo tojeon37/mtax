@@ -30,8 +30,43 @@ from app.core.security import (
 from app.core.config import settings
 from app.services.auth_service import AuthService
 from app.services.company_service import CompanyService
+from app.models.tax_invoice_issue import TaxInvoiceIssue
 
 router = APIRouter()
+
+# 무료 발행 기본 제공 수량 상수
+FREE_INVOICE_QUOTA = 5
+
+
+def calculate_free_invoice_remaining(db: Session, user_id: int) -> dict:
+    """
+    무료 발행 잔여 건수 계산
+    
+    Args:
+        db: 데이터베이스 세션
+        user_id: 사용자 ID
+        
+    Returns:
+        {
+            "free_invoice_quota": FREE_INVOICE_QUOTA,
+            "free_invoice_used": used_count,
+            "free_invoice_remaining": free_invoice_remaining
+        }
+    """
+    # 사용된 무료 발행 건수 계산 (TaxInvoiceIssue 테이블에서 발행 성공한 건수)
+    used_count = db.query(TaxInvoiceIssue).filter(
+        TaxInvoiceIssue.user_id == user_id,
+        TaxInvoiceIssue.barobill_result_code > 0  # 발행 성공한 건수만 카운트
+    ).count()
+    
+    # 잔여 건수 계산
+    free_invoice_remaining = max(0, FREE_INVOICE_QUOTA - used_count)
+    
+    return {
+        "free_invoice_quota": FREE_INVOICE_QUOTA,
+        "free_invoice_used": used_count,
+        "free_invoice_remaining": free_invoice_remaining
+    }
 
 
 class LoginRequest(BaseModel):
@@ -720,12 +755,10 @@ def get_current_user_info(
     # DB에서 최신 정보 조회
     db.refresh(current_user)
 
-    # free_quota에서 무료 건수 조회
-    from app.crud.free_quota import get_or_create_free_quota
+    # 무료 발행 건수 계산 (계산값으로 반환)
     from app.models.payment_method import PaymentMethod
-
-    free_quota = get_or_create_free_quota(db, current_user.id)
-    free_invoice_remaining = free_quota.free_invoice_left if free_quota else 0
+    
+    free_invoice_info = calculate_free_invoice_remaining(db, current_user.id)
 
     # payment_methods에서 결제수단 등록 여부 확인
     has_payment_method = (
@@ -744,7 +777,9 @@ def get_current_user_info(
         barobill_cert_key=current_user.barobill_cert_key,
         barobill_linked=current_user.barobill_linked,
         barobill_linked_at=current_user.barobill_linked_at,
-        free_invoice_remaining=free_invoice_remaining,
+        free_invoice_quota=free_invoice_info["free_invoice_quota"],
+        free_invoice_used=free_invoice_info["free_invoice_used"],
+        free_invoice_remaining=free_invoice_info["free_invoice_remaining"],
         has_payment_method=has_payment_method,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
@@ -867,12 +902,10 @@ def update_current_user_info(
         db.commit()
         db.refresh(user)
 
-        # free_quota에서 무료 건수 조회
-        from app.crud.free_quota import get_or_create_free_quota
+        # 무료 발행 건수 계산 (계산값으로 반환)
         from app.models.payment_method import PaymentMethod
 
-        free_quota = get_or_create_free_quota(db, user.id)
-        free_invoice_remaining = free_quota.free_invoice_left if free_quota else 0
+        free_invoice_info = calculate_free_invoice_remaining(db, user.id)
 
         # payment_methods에서 결제수단 등록 여부 확인
         has_payment_method = (
@@ -900,7 +933,9 @@ def update_current_user_info(
             barobill_cert_key=user.barobill_cert_key,
             barobill_linked=user.barobill_linked,
             barobill_linked_at=user.barobill_linked_at,
-            free_invoice_remaining=free_invoice_remaining,
+            free_invoice_quota=free_invoice_info["free_invoice_quota"],
+            free_invoice_used=free_invoice_info["free_invoice_used"],
+            free_invoice_remaining=free_invoice_info["free_invoice_remaining"],
             has_payment_method=has_payment_method,
             created_at=user.created_at,
             updated_at=user.updated_at,

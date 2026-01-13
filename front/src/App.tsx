@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth'
 import { ThemeProvider } from './hooks/useTheme'
@@ -6,10 +6,27 @@ import { TopBar } from './components/layout/TopBar'
 import { AppRouter } from './router'
 import { refreshAccessToken } from './api/tokenRefresh'
 import axios from 'axios'
+import { ToastContainer } from './components/common/Toast'
+import { subscribeToasts, removeToast, ToastMessage } from './utils/toast'
+import { overrideGlobalAlert } from './utils/alert'
 
 function App() {
   // 앱 시작 시 불필요한 회사 정보 로드는 제거
   // 회사 정보는 각 페이지에서 필요할 때만 로드하도록 변경
+
+  // Toast 상태 관리
+  const [toasts, setToasts] = useState<ToastMessage[]>([])
+
+  useEffect(() => {
+    const unsubscribe = subscribeToasts((newToasts) => {
+      setToasts(newToasts)
+    })
+
+    // 전역 alert() 함수를 커스텀 Toast로 오버라이드
+    overrideGlobalAlert()
+
+    return unsubscribe
+  }, [])
 
   // 앱 시작 시 refresh token으로 자동 로그인 시도
   useEffect(() => {
@@ -71,6 +88,7 @@ function App() {
             <main className="max-w-[480px] mx-auto bg-gray-50 dark:bg-gray-900">
               <AppRouter />
             </main>
+            <ToastContainer toasts={toasts} onClose={removeToast} />
           </div>
         </AuthProvider>
       </ThemeProvider>

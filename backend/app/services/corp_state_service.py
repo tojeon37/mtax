@@ -5,10 +5,32 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from app.models.corp_state_history import CorpStateHistory
 from app.models.user import User
-from app.crud.usage import record_usage_log
-from app.models.usage_log import UsageType
-from app.models.billing_charge import BillingCharge, ChargeType
+from app.models.tax_invoice_issue import TaxInvoiceIssue
 from fastapi import HTTPException, status
+
+# 무료 발행 기본 제공 수량 상수
+FREE_INVOICE_QUOTA = 5
+
+
+def calculate_free_invoice_remaining(db: Session, user_id: int) -> int:
+    """
+    무료 발행 잔여 건수 계산
+    
+    Args:
+        db: 데이터베이스 세션
+        user_id: 사용자 ID
+        
+    Returns:
+        잔여 무료 발행 건수
+    """
+    # 사용된 무료 발행 건수 계산 (TaxInvoiceIssue 테이블에서 발행 성공한 건수)
+    used_count = db.query(TaxInvoiceIssue).filter(
+        TaxInvoiceIssue.user_id == user_id,
+        TaxInvoiceIssue.barobill_result_code > 0  # 발행 성공한 건수만 카운트
+    ).count()
+    
+    # 잔여 건수 계산
+    return max(0, FREE_INVOICE_QUOTA - used_count)
 
 
 class CorpStateService:
@@ -34,30 +56,33 @@ class CorpStateService:
         }
 
     @staticmethod
-    def validate_user_quota(user: User):
+    def get_invoice_usage_info(db: Session, user_id: int) -> dict:
         """
-        사용자의 무료 건수 및 결제수단 확인
+        발행 사용량 정보 조회 (상태조회 API용)
         
         Args:
-            user: User 객체
+            db: 데이터베이스 세션
+            user_id: 사용자 ID
             
-        Raises:
-            HTTPException: 무료 건수가 없고 결제수단도 없는 경우
-        
-        Note:
-            사업자상태조회는 전자세금계산서 무료 제공 기간 동안만 무료로 제공됩니다.
-            전자세금계산서 무료 제공분이 소진되면 사업자상태조회도 유료로 전환됩니다.
+        Returns:
+            {
+                "free_invoice_quota": 5,
+                "free_invoice_used": used_count,
+                "free_invoice_remaining": max(0, 5 - used_count),
+                "invoice_issue_is_paid": used_count >= 5
+            }
         """
-        # 전자세금계산서 무료 제공 기간 확인 (사업자상태조회는 전자세금계산서 무료 제공 기간 동안만 무료)
-        if user.free_invoice_remaining > 0:
-            return  # 전자세금계산서 무료 제공 기간이면 사업자상태조회도 무료로 허용
+        used_count = db.query(TaxInvoiceIssue).filter(
+            TaxInvoiceIssue.user_id == user_id,
+            TaxInvoiceIssue.barobill_result_code > 0  # 발행 성공한 건수만 카운트
+        ).count()
         
-        # 전자세금계산서 무료 제공 기간이 종료되면 결제수단 확인
-        if not user.has_payment_method:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="무료 제공 기간이 종료되었습니다. 상태조회는 건당 15원이 과금됩니다. 사용을 위해 결제수단을 먼저 등록해주세요."
-            )
+        return {
+            "free_invoice_quota": FREE_INVOICE_QUOTA,
+            "free_invoice_used": used_count,
+            "free_invoice_remaining": max(0, FREE_INVOICE_QUOTA - used_count),
+            "invoice_issue_is_paid": used_count >= FREE_INVOICE_QUOTA
+        }
 
     @staticmethod
     def save_corp_state_history(
@@ -70,7 +95,7 @@ class CorpStateService:
         ceo_name: str = ""
     ):
         """
-        사업자 상태 조회 이력 저장 및 과금 처리
+        사업자 상태 조회 이력 저장 (과금 없음)
         
         Args:
             db: 데이터베이스 세션
@@ -80,9 +105,13 @@ class CorpStateService:
             state_info: 상태 정보 딕셔너리
             corp_name: 회사명
             ceo_name: 대표자명
+        
+        Note:
+            상태조회는 항상 무료로 제공됩니다.
+            과금/차단 로직은 발행 API에서만 적용됩니다.
         """
         try:
-            # 조회 이력 저장
+            # 조회 이력 저장만 수행 (과금 없음)
             history = CorpStateHistory(
                 user_id=user.id,
                 corp_num=corp_num,
@@ -92,33 +121,6 @@ class CorpStateService:
                 ceo_name=ceo_name
             )
             db.add(history)
-            
-            # 무료 제공 건수 차감 또는 과금 처리
-            # 사업자상태조회는 전자세금계산서 무료 제공 기간 동안만 무료로 제공
-            if user.free_invoice_remaining > 0:
-                # 전자세금계산서 무료 제공 기간이면 사업자상태조회도 무료로 제공 (건수 차감 없음)
-                # 사업자상태조회 무료 제공 건수는 별도로 차감하지 않음
-                pass
-            else:
-                # 결제수단이 등록된 경우 과금 처리
-                if user.has_payment_method:
-                    # 사용 내역 기록 (후불 청구)
-                    record_usage_log(
-                        db=db,
-                        user_id=user.id,
-                        usage_type=UsageType.STATUS_CHECK,
-                        quantity=1
-                    )
-                    # BillingCharge 기록
-                    charge = BillingCharge(
-                        user_id=user.id,
-                        charge_type=ChargeType.STATUS_CHECK,
-                        amount=15  # 상태조회 건당 15원
-                    )
-                    db.add(charge)
-            
-            # 사용자 정보 업데이트 저장
-            db.add(user)
             db.commit()
         except HTTPException:
             raise

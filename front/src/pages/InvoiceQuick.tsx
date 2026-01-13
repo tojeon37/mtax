@@ -12,7 +12,7 @@ import { CertificateRegistrationSuccessModal } from '../components/modals/Certif
 import { CertificateRegistrationModal } from '../components/modals/CertificateRegistrationModal'
 import { useBarobillInvoice } from '../hooks/invoice/useBarobillInvoice'
 import { useInvoiceValidation } from '../hooks/invoice/useInvoiceValidation'
-import { checkCertificate } from '../api/barobillApi'
+import { checkCertificate, fetchCertificateStatus } from '../api/barobillApi'
 import { formatError } from '../utils/errorHelpers'
 import { Client } from '../api/clientApi'
 import { Company } from '../api/companyApi'
@@ -64,6 +64,7 @@ export const InvoiceQuick: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showCertificateRegistrationModal, setShowCertificateRegistrationModal] = useState(false)
   const [isCheckingCertificate, setIsCheckingCertificate] = useState(false)
+  const [certificateStatus, setCertificateStatus] = useState<{certificate_registered: boolean; can_issue_invoice: boolean} | null>(null)
 
   // 첫 번째 품목이 있으면 자동으로 펼치기
   useEffect(() => {
@@ -154,12 +155,21 @@ export const InvoiceQuick: React.FC = () => {
       return
     }
 
-    // 인증서 체크
+    // 인증서 상태 확인 (이미 조회된 상태가 있으면 사용, 없으면 새로 조회)
     setIsCheckingCertificate(true)
     try {
-      const certCheckResult = await checkCertificate()
+      let certStatus = certificateStatus
+      if (!certStatus) {
+        // 인증서 상태가 없으면 새로 조회
+        const fetchedStatus = await fetchCertificateStatus()
+        certStatus = {
+          certificate_registered: fetchedStatus.certificate_registered,
+          can_issue_invoice: fetchedStatus.can_issue_invoice,
+        }
+        setCertificateStatus(certStatus)
+      }
 
-      if (!certCheckResult.is_valid) {
+      if (!certStatus || !certStatus.certificate_registered || !certStatus.can_issue_invoice) {
         // 인증서 미등록 - 안내 모달 표시
         setIsCheckingCertificate(false)
         // 모달 표시를 약간 지연시켜 상태 업데이트가 완료되도록 함
@@ -217,17 +227,23 @@ export const InvoiceQuick: React.FC = () => {
   const handleCheckCertificateComplete = async () => {
     try {
       setIsCheckingCertificate(true)
-      const certCheckResult = await checkCertificate()
+      // 인증서 상태 조회 (비밀번호 불필요)
+      const certStatus = await fetchCertificateStatus()
       setIsCheckingCertificate(false)
 
-      if (certCheckResult.is_valid) {
+      if (certStatus.certificate_registered && certStatus.can_issue_invoice) {
+        // 인증서 상태 업데이트
+        setCertificateStatus({
+          certificate_registered: certStatus.certificate_registered,
+          can_issue_invoice: certStatus.can_issue_invoice,
+        })
         setShowCertificateRegistrationModal(false)
         // 모달 전환 시 약간의 지연을 두어 상태 업데이트가 완료되도록 함
         setTimeout(() => {
           setShowSuccessModal(true)
         }, 150)
       } else {
-        alert('인증서가 아직 등록되지 않았습니다.\n인증서 등록을 완료한 후 다시 시도해주세요.')
+        alert(`인증서가 아직 등록되지 않았습니다.\n${certStatus.certificate_status_message || '인증서 등록을 완료한 후 다시 시도해주세요.'}`)
       }
     } catch (error) {
       setIsCheckingCertificate(false)
@@ -419,13 +435,13 @@ export const InvoiceQuick: React.FC = () => {
         <div className="max-w-[480px] mx-auto px-4 py-4">
           <button
             onClick={handleIssueWithPreview}
-            disabled={!isFormValid() || isIssuing || isCheckingCertificate}
-            className={`w-full h-14 rounded-xl font-semibold text-lg transition-colors ${isFormValid() && !isIssuing && !isCheckingCertificate
+            disabled={!isFormValid() || isIssuing || isCheckingCertificate || (certificateStatus && !certificateStatus.can_issue_invoice)}
+            className={`w-full h-14 rounded-xl font-semibold text-lg transition-colors ${isFormValid() && !isIssuing && !isCheckingCertificate && (!certificateStatus || certificateStatus.can_issue_invoice)
               ? 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600'
               : 'bg-gray-300 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
               }`}
           >
-            {isCheckingCertificate ? '보안 확인 중...' : isIssuing ? '발행 중...' : '바로 발행'}
+            {isCheckingCertificate ? '보안 확인 중...' : isIssuing ? '발행 중...' : (certificateStatus && !certificateStatus.can_issue_invoice) ? '인증서 미등록' : '바로 발행'}
           </button>
         </div>
       </div>

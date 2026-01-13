@@ -386,12 +386,11 @@ def check_corp_state(
             {"name": "알 수 없음", "description": "상태를 확인할 수 없습니다."},
         )
 
-        # 조회 이력 저장 및 사용 내역 기록 (로그인 사용자인 경우만)
+        # 조회 이력 저장 (로그인 사용자인 경우만, 과금 없음)
+        usage_info = None
+        cert_status_info = None
         if current_user:
-            # 무료 건수 및 결제수단 확인 (서비스 레이어 사용)
-            CorpStateService.validate_user_quota(current_user)
-
-            # 이력 저장 및 과금 처리 (서비스 레이어 사용)
+            # 이력 저장 (과금 없음)
             CorpStateService.save_corp_state_history(
                 db=db,
                 user=current_user,
@@ -402,13 +401,50 @@ def check_corp_state(
                 ceo_name=result.get("ceo_name", ""),
             )
 
-        return {
+            # 발행 사용량 정보 조회 (정보 제공용)
+            usage_info = CorpStateService.get_invoice_usage_info(db, current_user.id)
+            
+            # 인증서 상태 조회 (정보 제공용)
+            if current_user.barobill_linked and current_user.barobill_cert_key and current_user.barobill_corp_num:
+                try:
+                    from app.core.barobill.barobill_auth import BaroBillAuthService
+                    auth_service = BaroBillAuthService(
+                        cert_key=current_user.barobill_cert_key,
+                        corp_num=current_user.barobill_corp_num.replace("-", "").strip(),
+                        use_test_server=getattr(settings, "BAROBILL_USE_TEST_SERVER", False)
+                    )
+                    cert_status = auth_service.get_certificate_status()
+                    cert_status_info = {
+                        "certificate_registered": cert_status["certificate_registered"],
+                        "certificate_status_message": cert_status["status_message"],
+                        "can_issue_invoice": cert_status["can_issue_invoice"],
+                    }
+                except Exception:
+                    # 인증서 상태 조회 실패 시 무시
+                    pass
+
+        response = {
             "success": True,
             "data": result,
             "state_name": state_info["name"],
             "state_description": state_info["description"],
             "is_normal": result.get("is_normal", False),
         }
+        
+        # 발행 사용량 정보 추가 (로그인 사용자인 경우만)
+        if usage_info:
+            response.update({
+                "free_invoice_quota": usage_info["free_invoice_quota"],
+                "free_invoice_used": usage_info["free_invoice_used"],
+                "free_invoice_remaining": usage_info["free_invoice_remaining"],
+                "invoice_issue_is_paid": usage_info["invoice_issue_is_paid"],
+            })
+        
+        # 인증서 상태 정보 추가 (로그인 사용자인 경우만)
+        if cert_status_info:
+            response.update(cert_status_info)
+        
+        return response
     except HTTPException:
         raise
     except Exception as e:

@@ -94,8 +94,8 @@ export const getCorpStateHistory = async (corpNum: string): Promise<CorpStateHis
 
 export interface CertificateStatusResponse {
   certificate_registered: boolean;
-  expire_date: string | null;
-  message?: string;
+  certificate_status_message: string;
+  can_issue_invoice: boolean;
 }
 
 export const fetchCertificateStatus = async (): Promise<CertificateStatusResponse> => {
@@ -107,8 +107,8 @@ export const fetchCertificateStatus = async (): Promise<CertificateStatusRespons
     // 에러 발생 시 인증서 미등록으로 간주
     return {
       certificate_registered: false,
-      expire_date: null,
-      message: formatError(error) || "인증서 상태를 확인할 수 없습니다."
+      certificate_status_message: formatError(error) || "인증서 상태를 확인할 수 없습니다.",
+      can_issue_invoice: false,
     };
   }
 };
