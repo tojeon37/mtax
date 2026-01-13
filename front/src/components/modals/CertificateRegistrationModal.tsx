@@ -36,6 +36,8 @@ export const CertificateRegistrationModal: React.FC<CertificateRegistrationModal
             • 인증서 등록은 새 창에서 진행됩니다.
             <br />
             • 등록을 완료한 후 이 창으로 돌아와주세요.
+            <br />
+            • 계발이는 바로빌의 제휴파트너로 동일한 아이디 패스워드로 바로빌 로그인이 가능합니다.
           </p>
         </div>
 
